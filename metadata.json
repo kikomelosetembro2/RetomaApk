@@ -1,0 +1,6 @@
+{
+  "name": "Retoma Digital - Contratos, Vendas & NFC Google",
+  "description": "Plataforma comercial e operacional de planos mensais e anuais, contratos com emissão em PDF e WhatsApp, dashboard financeiro, agendamentos de visita e catálogo de produtos digitais com visualizador 3D do Cartão NFC.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
