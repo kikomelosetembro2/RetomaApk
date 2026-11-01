@@ -35,6 +35,22 @@ export interface ProductItem {
   idealFor: string;
 }
 
+export type ProductStatus = 'ativo' | 'inativo';
+
+export interface AdminProduct {
+  id: string;
+  name: string;
+  description: string;
+  sku: string;
+  category: string;
+  price: number;
+  stock: number;
+  status: ProductStatus;
+  imageUrl: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
 export interface ClientData {
   companyName: string; // Razão Social
   tradeName: string;   // Nome Fantasia

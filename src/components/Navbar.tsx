@@ -14,13 +14,14 @@ import {
   CheckCircle,
   User,
   Smartphone,
-  Download
+  Download,
+  Boxes
 } from 'lucide-react';
 import retomaLogo from '../assets/logo.png';
 import { RETOMA_PHONE_DISPLAY, RETOMA_WHATSAPP_OFFICIAL } from '../data/initialData';
 import { AuthUser } from '../types';
 
-export type NavTab = 'plans' | 'contract' | 'products' | 'schedule' | 'financial' | 'brokers' | 'card3d';
+export type NavTab = 'plans' | 'contract' | 'products' | 'admin-products' | 'schedule' | 'financial' | 'brokers' | 'card3d';
 
 interface NavbarProps {
   currentTab: NavTab;
@@ -49,6 +50,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     { id: 'plans' as NavTab, label: 'Planos Mensal / Anual', icon: Sparkles, badge: 'Economize 20%' },
     { id: 'contract' as NavTab, label: 'Gerador de Contrato', icon: FileText, badge: 'PDF & Whats' },
     { id: 'products' as NavTab, label: 'Produtos & Serviços', icon: ShoppingBag },
+    { id: 'admin-products' as NavTab, label: 'Admin Produtos', icon: Boxes, badge: 'CRUD' },
     { id: 'schedule' as NavTab, label: 'Agendamento de Visitas', icon: Calendar, count: pendingVisitsCount },
     { id: 'financial' as NavTab, label: 'Dashboard Financeiro', icon: BarChart3, count: activeContractsCount },
     { 

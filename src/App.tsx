@@ -10,6 +10,7 @@ import { BrokerPortalView } from './components/BrokerPortalView';
 import { AuthModal } from './components/AuthModal';
 import { Card3DViewer } from './components/Card3DViewer';
 import { ContractSuccessModal } from './components/ContractSuccessModal';
+import { AdminProductPanel } from './components/AdminProductPanel';
 import { Plan, BillingCycle, ContractItem, VisitSchedule, ProductItem, Broker, AuthUser } from './types';
 import { 
   INITIAL_CONTRACTS, 
@@ -171,7 +172,12 @@ export default function App() {
           <ProductsTab
             onOrderProductsDirectly={handleOrderProductsDirectly}
             onOpen3DViewer={() => setCurrentTab('card3d')}
+            onOpenAdminProducts={() => setCurrentTab('admin-products')}
           />
+        )}
+
+        {currentTab === 'admin-products' && (
+          <AdminProductPanel />
         )}
 
         {currentTab === 'schedule' && (
@@ -184,12 +190,15 @@ export default function App() {
           <FinancialDashboard
             contracts={contracts}
             brokers={brokers}
+            currentUser={currentUser}
             onOpenContractModal={(c) => setSuccessModalContract(c)}
             onNewContractClick={() => {
               setSelectedPlanForContract(INITIAL_PLANS[1]);
               setCurrentTab('contract');
             }}
             onPayCommission={handlePayCommission}
+            onNavigateToBrokersTab={() => setCurrentTab('brokers')}
+            onOpenAuthModal={() => setShowAuthModal(true)}
           />
         )}
 

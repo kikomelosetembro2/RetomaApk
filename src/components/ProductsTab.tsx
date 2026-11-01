@@ -15,17 +15,20 @@ import {
   Rotate3d,
   Sparkles,
   Clock,
-  CheckCircle2
+  CheckCircle2,
+  Boxes
 } from 'lucide-react';
 
 interface ProductsTabProps {
   onOrderProductsDirectly: (products: { product: ProductItem; quantity: number }[]) => void;
   onOpen3DViewer: () => void;
+  onOpenAdminProducts?: () => void;
 }
 
 export const ProductsTab: React.FC<ProductsTabProps> = ({
   onOrderProductsDirectly,
   onOpen3DViewer,
+  onOpenAdminProducts,
 }) => {
   const [cart, setCart] = useState<Record<string, number>>({
     prod_nfc_card: 1,
@@ -100,14 +103,26 @@ export const ProductsTab: React.FC<ProductsTabProps> = ({
           </p>
         </div>
 
-        {/* 3D Action button */}
-        <button
-          onClick={onOpen3DViewer}
-          className="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-4 py-2.5 rounded-xl font-semibold text-xs flex items-center gap-2 transition-colors cursor-pointer whitespace-nowrap self-start md:self-auto"
-        >
-          <Rotate3d className="w-4 h-4 text-blue-400" />
-          <span>Visualizar Cartão NFC em 3D</span>
-        </button>
+        {/* Header Action buttons */}
+        <div className="flex flex-wrap items-center gap-2 self-start md:self-auto">
+          {onOpenAdminProducts && (
+            <button
+              onClick={onOpenAdminProducts}
+              className="bg-blue-600/20 hover:bg-blue-600 text-blue-300 hover:text-white border border-blue-500/30 px-3.5 py-2.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap"
+            >
+              <Boxes className="w-4 h-4" />
+              <span>Gerenciar Catálogo (Admin)</span>
+            </button>
+          )}
+
+          <button
+            onClick={onOpen3DViewer}
+            className="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-4 py-2.5 rounded-xl font-semibold text-xs flex items-center gap-2 transition-colors cursor-pointer whitespace-nowrap"
+          >
+            <Rotate3d className="w-4 h-4 text-blue-400" />
+            <span>Visualizar Cartão NFC em 3D</span>
+          </button>
+        </div>
       </div>
 
       {/* Cart Summary Bar if items selected */}

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { ContractItem, Broker } from '../types';
-import { RETOMA_WHATSAPP_OFFICIAL, RETOMA_PHONE_DISPLAY, INITIAL_BROKERS } from '../data/initialData';
-import { formatCurrencyBRL, formatDateTimeBR, getWhatsAppContractUrl, getWhatsAppCommissionNoticeUrl } from '../utils/whatsapp';
+import { ContractItem, Broker, AuthUser } from '../types';
+import { RETOMA_WHATSAPP_OFFICIAL, INITIAL_BROKERS } from '../data/initialData';
+import { formatCurrencyBRL, formatDateTimeBR, getWhatsAppContractUrl } from '../utils/whatsapp';
 import { generateContractPDF, generateCommissionVoucherPDF } from '../utils/pdfGenerator';
 import { 
   BarChart3, 
@@ -12,43 +12,65 @@ import {
   Download, 
   MessageCircle, 
   Search, 
-  Filter, 
   CheckCircle2, 
-  Clock, 
-  AlertCircle,
-  Share2,
-  Calendar,
-  Layers,
-  ArrowUpRight,
-  Users,
-  Copy,
-  Check,
-  Target,
-  Award,
-  Zap
+  Layers, 
+  ArrowUpRight, 
+  Users, 
+  Copy, 
+  Check, 
+  Target, 
+  Zap,
+  Lock,
+  ShieldCheck,
+  PieChart as PieChartIcon,
+  ChevronRight,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import {
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip as RechartsTooltip,
+  Legend as RechartsLegend,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+} from 'recharts';
 
 interface FinancialDashboardProps {
   contracts: ContractItem[];
   brokers?: Broker[];
+  currentUser?: AuthUser | null;
   onOpenContractModal: (contract: ContractItem) => void;
   onNewContractClick: () => void;
   onPayCommission?: (contractId: string) => void;
+  onNavigateToBrokersTab?: () => void;
+  onOpenAuthModal?: () => void;
 }
 
 export const FinancialDashboard: React.FC<FinancialDashboardProps> = ({
   contracts,
   brokers = INITIAL_BROKERS,
+  currentUser,
   onOpenContractModal,
   onNewContractClick,
   onPayCommission,
+  onNavigateToBrokersTab,
+  onOpenAuthModal,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [selectedBrokerFilter, setSelectedBrokerFilter] = useState<string>('all');
   const [copiedPixId, setCopiedPixId] = useState<string | null>(null);
   const [projectedScenario, setProjectedScenario] = useState<'pro' | 'start' | 'elite' | 'average'>('pro');
+  const [pieMetric, setPieMetric] = useState<'value' | 'count'>('value');
+  const [showAdminCommissionsInDash, setShowAdminCommissionsInDash] = useState<boolean>(true);
+
+  const isAdmin = currentUser?.role === 'admin';
 
   const handleCopyPix = (pixKey: string, id: string) => {
     navigator.clipboard.writeText(pixKey);
@@ -134,11 +156,74 @@ export const FinancialDashboard: React.FC<FinancialDashboardProps> = ({
   const currentScenario = scenarioPricing[projectedScenario];
   const projected30Monthly = TARGET_CLIENTS * currentScenario.monthly;
   const projected30Annual = TARGET_CLIENTS * currentScenario.annual;
-  const projected30BrokerCommissionAnnual = projected30Annual * 0.50;
-  const projected30RetomaNetAnnual = projected30Annual * 0.50;
-  const projected30BrokerCommissionMonthly = projected30Monthly * 0.50;
-  const projected30RetomaNetMonthly = projected30Monthly * 0.50;
   const projected30NfcCards = TARGET_CLIENTS * currentScenario.nfcCount;
+
+  // ==========================================
+  // RECHARTS DATA PREPARATION
+  // ==========================================
+
+  // 1. Gráfico de Pizza: Distribuição de Vendas por Tipo de Plano
+  const planSalesAgg = contracts.reduce((acc, c) => {
+    const rawName = c.planName || 'Personalizado / Avulso';
+    let key = 'Personalizado / Avulso';
+    if (rawName.toLowerCase().includes('start') || rawName.toLowerCase().includes('essencial')) {
+      key = 'Plano Start Local';
+    } else if (rawName.toLowerCase().includes('pro') || rawName.toLowerCase().includes('acelera')) {
+      key = 'Plano Pro Aceleração';
+    } else if (rawName.toLowerCase().includes('elite')) {
+      key = 'Plano Elite Retoma';
+    }
+
+    if (!acc[key]) {
+      acc[key] = { name: key, totalValue: 0, count: 0 };
+    }
+    acc[key].totalValue += c.totalValue;
+    acc[key].count += 1;
+    return acc;
+  }, {} as Record<string, { name: string; totalValue: number; count: number }>);
+
+  const PLAN_COLOR_MAP: Record<string, string> = {
+    'Plano Pro Aceleração': '#3b82f6', // Azul brilhante
+    'Plano Start Local': '#10b981',    // Esmeralda
+    'Plano Elite Retoma': '#8b5cf6',   // Roxo
+    'Personalizado / Avulso': '#f59e0b', // Âmbar
+  };
+
+  const pieChartData = Object.keys(planSalesAgg).length > 0
+    ? Object.values(planSalesAgg).map((item) => ({
+        ...item,
+        value: pieMetric === 'value' ? item.totalValue : item.count,
+        color: PLAN_COLOR_MAP[item.name] || '#06b6d4',
+      }))
+    : [
+        { name: 'Plano Pro Aceleração', totalValue: 2748, count: 1, value: pieMetric === 'value' ? 2748 : 1, color: '#3b82f6' },
+        { name: 'Plano Start Local', totalValue: 149, count: 1, value: pieMetric === 'value' ? 149 : 1, color: '#10b981' },
+        { name: 'Plano Elite Retoma', totalValue: 4788, count: 1, value: pieMetric === 'value' ? 4788 : 1, color: '#8b5cf6' },
+      ];
+
+  const totalPieSum = pieChartData.reduce((sum, item) => sum + item.value, 0);
+
+  // 2. Gráfico de Linhas: Faturamento Mensal Acumulado
+  // Evolução cronológica com histórico consolidado e acumulação progressiva
+  const monthlyTimelineBase = [
+    { month: 'Jun/26', label: 'Junho 2026', revenue: 3200 },
+    { month: 'Jul/26', label: 'Julho 2026', revenue: 4100 },
+    { month: 'Ago/26', label: 'Agosto 2026', revenue: 5600 },
+    { month: 'Set/26', label: 'Setembro 2026', revenue: 6800 },
+    { month: 'Out/26', label: 'Outubro 2026', revenue: 7685 },
+    { month: 'Nov/26', label: 'Novembro 2026 (Atual)', revenue: 11500 },
+  ];
+
+  let cumulativeSum = 0;
+  const lineChartData = monthlyTimelineBase.map((item) => {
+    cumulativeSum += item.revenue;
+    return {
+      month: item.month,
+      label: item.label,
+      receitaMensal: item.revenue,
+      faturamentoAcumulado: cumulativeSum,
+    };
+  });
 
   // Filtered Contracts
   const filteredContracts = contracts.filter((c) => {
@@ -154,27 +239,39 @@ export const FinancialDashboard: React.FC<FinancialDashboardProps> = ({
 
   // Export CSV
   const handleExportCSV = () => {
-    const headers = ['Numero_Contrato', 'Data', 'Cliente', 'CNPJ_CPF', 'Plano', 'Ciclo', 'Valor_Total', 'Forma_Pagamento', 'Corretor', 'Comissao_50%', 'Status_Comissao', 'Status_Contrato'];
-    const rows = contracts.map((c) => [
-      c.contractNumber,
-      new Date(c.signedAt).toLocaleDateString('pt-BR'),
-      `"${c.client.companyName.replace(/"/g, '""')}"`,
-      c.client.documentNumber,
-      `"${c.planName || 'Personalizado'}"`,
-      c.billingCycle || 'mensal',
-      c.totalValue.toFixed(2),
-      c.paymentMethod,
-      `"${c.brokerName || 'Direto'}"`,
-      (c.commissionValue || c.totalValue * 0.5).toFixed(2),
-      c.commissionStatus || 'pending',
-      c.status,
-    ]);
+    // Se não for admin, exporta sem colunas de comissão
+    const headers = isAdmin
+      ? ['Numero_Contrato', 'Data', 'Cliente', 'CNPJ_CPF', 'Plano', 'Ciclo', 'Valor_Total', 'Forma_Pagamento', 'Corretor', 'Comissao_50%', 'Status_Comissao', 'Status_Contrato']
+      : ['Numero_Contrato', 'Data', 'Cliente', 'CNPJ_CPF', 'Plano', 'Ciclo', 'Valor_Total', 'Forma_Pagamento', 'Status_Contrato'];
+
+    const rows = contracts.map((c) => {
+      const baseRow = [
+        c.contractNumber,
+        new Date(c.signedAt).toLocaleDateString('pt-BR'),
+        `"${c.client.companyName.replace(/"/g, '""')}"`,
+        c.client.documentNumber,
+        `"${c.planName || 'Personalizado'}"`,
+        c.billingCycle || 'mensal',
+        c.totalValue.toFixed(2),
+        c.paymentMethod,
+      ];
+
+      if (isAdmin) {
+        baseRow.push(
+          `"${c.brokerName || 'Direto'}"`,
+          (c.commissionValue || c.totalValue * 0.5).toFixed(2),
+          c.commissionStatus || 'pending'
+        );
+      }
+      baseRow.push(c.status);
+      return baseRow;
+    });
 
     const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `Relatorio_Financeiro_Comissoes_Retoma_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute('download', `Relatorio_Financeiro_Retoma_${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -196,13 +293,13 @@ export const FinancialDashboard: React.FC<FinancialDashboardProps> = ({
         <div>
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold mb-2">
             <BarChart3 className="w-3.5 h-3.5" />
-            <span>Métricas em Tempo Real</span>
+            <span>Métricas Oficiais em Tempo Real</span>
           </div>
           <h2 className="text-3xl font-black text-white">
             Dashboard Financeiro & Gestão de Contratos
           </h2>
           <p className="text-xs sm:text-sm text-slate-400 mt-1">
-            Acompanhe o faturamento consolidado, receita recorrente (MRR/ARR) e contratos emitidos pela Retoma Digital.
+            Acompanhe o faturamento consolidado, receita acumulada, MRR/ARR e contratos emitidos pela Retoma Digital.
           </p>
         </div>
 
@@ -242,7 +339,7 @@ export const FinancialDashboard: React.FC<FinancialDashboardProps> = ({
           </div>
           <div className="text-[11px] text-emerald-400 font-semibold mt-2 flex items-center gap-1">
             <ArrowUpRight className="w-3.5 h-3.5" />
-            <span>Fluxo mensal garantido</span>
+            <span>Fluxo mensal contínuo</span>
           </div>
         </div>
 
@@ -312,10 +409,10 @@ export const FinancialDashboard: React.FC<FinancialDashboardProps> = ({
               <span>Meta Comercial Estratégica: Apenas 30 Clientes</span>
             </div>
             <h3 className="text-xl sm:text-2xl font-black text-white">
-              Projeção de Faturamento & Comissões (Base 30 Clientes)
+              Projeção de Faturamento Consolidado (Base 30 Clientes)
             </h3>
             <p className="text-xs sm:text-sm text-slate-400">
-              Valores corrigidos estimando uma carteira de 30 clientes ativos com comissão de 50% para corretores.
+              Valores corrigidos estimando uma carteira sólida de 30 clientes comerciais ativos na Retoma Digital.
             </p>
           </div>
 
@@ -364,7 +461,7 @@ export const FinancialDashboard: React.FC<FinancialDashboardProps> = ({
           </div>
         </div>
 
-        {/* 4 Cards breakdown for 30 clients */}
+        {/* 4 Cards breakdown for 30 clients (Sem exibição de comissão para público geral) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Card 1: Faturamento Anual (ARR) */}
           <div className="bg-slate-950/70 border border-slate-800 p-4 rounded-2xl space-y-1">
@@ -395,31 +492,31 @@ export const FinancialDashboard: React.FC<FinancialDashboardProps> = ({
             </p>
           </div>
 
-          {/* Card 3: Comissão Total dos Corretores (50%) */}
-          <div className="bg-slate-950/70 border border-purple-900/40 p-4 rounded-2xl space-y-1">
-            <div className="flex items-center justify-between text-xs text-purple-300">
-              <span className="uppercase font-bold text-[10px]">Comissões Corretores (50%)</span>
-              <Award className="w-4 h-4 text-purple-400" />
+          {/* Card 3: Ticket Médio Anualizado por Cliente */}
+          <div className="bg-slate-950/70 border border-slate-800 p-4 rounded-2xl space-y-1">
+            <div className="flex items-center justify-between text-xs text-indigo-300">
+              <span className="uppercase font-bold text-[10px]">Ticket Médio Anual</span>
+              <Target className="w-4 h-4 text-indigo-400" />
             </div>
-            <div className="text-2xl font-black text-purple-300">
-              {formatCurrencyBRL(projected30BrokerCommissionAnnual)}
+            <div className="text-2xl font-black text-indigo-300">
+              {formatCurrencyBRL(currentScenario.annual)}
             </div>
             <p className="text-[11px] text-slate-400">
-              {formatCurrencyBRL(projected30BrokerCommissionMonthly)}/mês dividido aos corretores
+              Média por estabelecimento parceiro
             </p>
           </div>
 
-          {/* Card 4: Lucro Líquido Retoma Digital */}
+          {/* Card 4: Hardware NFC Ativo */}
           <div className="bg-slate-950/70 border border-emerald-900/40 p-4 rounded-2xl space-y-1">
             <div className="flex items-center justify-between text-xs text-emerald-300">
-              <span className="uppercase font-bold text-[10px]">Lucro Líquido Retoma (50%)</span>
+              <span className="uppercase font-bold text-[10px]">Cartões NFC Ativos</span>
               <Zap className="w-4 h-4 text-emerald-400" />
             </div>
             <div className="text-2xl font-black text-emerald-400">
-              {formatCurrencyBRL(projected30RetomaNetAnnual)}
+              {projected30NfcCards} un
             </div>
             <p className="text-[11px] text-slate-400">
-              {formatCurrencyBRL(projected30RetomaNetMonthly)}/mês após pagar comissões
+              Pontos de coleta de 5 estrelas no comércio
             </p>
           </div>
         </div>
@@ -428,212 +525,403 @@ export const FinancialDashboard: React.FC<FinancialDashboardProps> = ({
         <div className="p-3.5 bg-blue-950/30 border border-blue-500/20 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-300">
           <div className="flex items-center gap-2">
             <span className="p-1 rounded bg-blue-500/20 text-blue-400 font-bold">30</span>
-            <span>Com <strong>30 clientes</strong> na carteira, serão emitidos <strong>{projected30NfcCards} Cartões NFC Google Avaliação</strong> ativos no comércio.</span>
+            <span>Com <strong>30 clientes</strong> na carteira, a Retoma alcança receita estável e consolidação da marca na região de Rio Branco e Acre.</span>
           </div>
-          <span className="text-emerald-400 font-bold shrink-0">Comissão garantida de 50% por contrato</span>
+          <span className="text-emerald-400 font-bold shrink-0">Meta Estratégica Oficial</span>
         </div>
       </div>
 
-      {/* Visual Revenue Breakdown & Projections */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Monthly Timeline Chart */}
-        <div className="lg:col-span-2 bg-slate-900/60 border border-slate-800 p-6 rounded-3xl space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-base font-bold text-white">Evolução do Faturamento Mensal (R$)</h3>
-              <p className="text-xs text-slate-400">Histórico de fechamentos e receita recorrente</p>
+      {/* ======================================================== */}
+      {/* GRÁFICOS RECHARTS: LINHAS (ACUMULADO) E PIZZA (PLANOS)    */}
+      {/* ======================================================== */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* GRÁFICO DE LINHAS: Faturamento Mensal Acumulado (7 colunas) */}
+        <div className="lg:col-span-7 bg-slate-900/70 border border-slate-800 p-6 rounded-3xl space-y-4 shadow-xl flex flex-col justify-between">
+          <div>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-3">
+              <div>
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-[11px] font-bold uppercase tracking-wider mb-1">
+                  <TrendingUp className="w-3 h-3" />
+                  <span>Curva de Crescimento</span>
+                </div>
+                <h3 className="text-lg font-black text-white">Faturamento Mensal Acumulado</h3>
+                <p className="text-xs text-slate-400">
+                  Evolução cronológica da receita mensal e crescimento acumulado no período
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-xl">
+                  Acumulado: {formatCurrencyBRL(lineChartData[lineChartData.length - 1].faturamentoAcumulado)}
+                </span>
+              </div>
             </div>
-            <span className="text-xs font-semibold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg">
-              +38% vs Mês Anterior
-            </span>
+
+            {/* Recharts Line Chart */}
+            <div className="w-full h-72 pt-4">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={lineChartData} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
+                  <defs>
+                    <linearGradient id="lineColorGradient" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor="#38bdf8" />
+                      <stop offset="100%" stopColor="#6366f1" />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                  <XAxis 
+                    dataKey="month" 
+                    stroke="#64748b" 
+                    tick={{ fill: '#94a3b8', fontSize: 11 }} 
+                    axisLine={{ stroke: '#334155' }}
+                  />
+                  <YAxis 
+                    stroke="#64748b" 
+                    tick={{ fill: '#94a3b8', fontSize: 10 }}
+                    tickFormatter={(val) => `R$ ${(val / 1000).toFixed(0)}k`}
+                    axisLine={{ stroke: '#334155' }}
+                  />
+                  <RechartsTooltip
+                    content={({ active, payload }) => {
+                      if (active && payload && payload.length) {
+                        const data = payload[0].payload;
+                        return (
+                          <div className="bg-slate-950/95 border border-slate-700 p-3 rounded-2xl shadow-2xl backdrop-blur-md text-xs space-y-1.5">
+                            <div className="font-bold text-white border-b border-slate-800 pb-1 flex items-center justify-between gap-4">
+                              <span>{data.label}</span>
+                              <span className="text-[10px] text-slate-400">{data.month}</span>
+                            </div>
+                            <div className="flex items-center justify-between gap-3 text-cyan-400">
+                              <span>Faturamento Acumulado:</span>
+                              <span className="font-mono font-bold text-sm">{formatCurrencyBRL(data.faturamentoAcumulado)}</span>
+                            </div>
+                            <div className="flex items-center justify-between gap-3 text-emerald-400">
+                              <span>Receita do Mês:</span>
+                              <span className="font-mono font-semibold">{formatCurrencyBRL(data.receitaMensal)}</span>
+                            </div>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                  <RechartsLegend 
+                    verticalAlign="top" 
+                    align="right" 
+                    height={32}
+                    iconType="circle"
+                    wrapperStyle={{ fontSize: '11px', color: '#cbd5e1' }}
+                  />
+                  <Line
+                    type="monotone"
+                    name="Faturamento Acumulado"
+                    dataKey="faturamentoAcumulado"
+                    stroke="url(#lineColorGradient)"
+                    strokeWidth={3.5}
+                    dot={{ fill: '#0284c7', r: 5, stroke: '#38bdf8', strokeWidth: 2 }}
+                    activeDot={{ r: 7, fill: '#38bdf8', stroke: '#ffffff', strokeWidth: 2 }}
+                  />
+                  <Line
+                    type="monotone"
+                    name="Receita do Mês"
+                    dataKey="receitaMensal"
+                    stroke="#10b981"
+                    strokeWidth={2}
+                    strokeDasharray="4 4"
+                    dot={{ fill: '#059669', r: 4 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
           </div>
 
-          {/* Bar Chart Mockup */}
-          <div className="pt-4 h-48 flex items-end justify-between gap-3 px-2 border-b border-slate-800 pb-2">
-            {[
-              { month: 'Jun', val: 3200, height: '35%' },
-              { month: 'Jul', val: 4100, height: '45%' },
-              { month: 'Ago', val: 5600, height: '60%' },
-              { month: 'Set', val: 6800, height: '72%' },
-              { month: 'Out', val: 8900, height: '88%' },
-              { month: 'Nov (Proj)', val: 11500, height: '100%', highlight: true },
-            ].map((bar, i) => (
-              <div key={i} className="flex-1 flex flex-col items-center gap-2 group">
-                <span className="text-[10px] text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity">
-                  {formatCurrencyBRL(bar.val)}
-                </span>
-                <div
-                  style={{ height: bar.height }}
-                  className={`w-full max-w-[48px] rounded-t-xl transition-all ${
-                    bar.highlight
-                      ? 'bg-gradient-to-t from-blue-600 to-indigo-500'
-                      : 'bg-slate-800 group-hover:bg-blue-600/70'
+          <div className="pt-2 border-t border-slate-800/80 flex flex-wrap items-center justify-between text-xs text-slate-400 gap-2">
+            <span>• Base consolidada com fechamentos mensais e projeção da carteira</span>
+            <span className="text-cyan-400 font-semibold">Meta 30: {formatCurrencyBRL(projected30Annual)}/ano</span>
+          </div>
+        </div>
+
+        {/* GRÁFICO DE PIZZA: Distribuição por Tipo de Plano (5 colunas) */}
+        <div className="lg:col-span-5 bg-slate-900/70 border border-slate-800 p-6 rounded-3xl space-y-4 shadow-xl flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
+              <div>
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[11px] font-bold uppercase tracking-wider mb-1">
+                  <PieChartIcon className="w-3 h-3" />
+                  <span>Mix de Planos</span>
+                </div>
+                <h3 className="text-lg font-black text-white">Vendas por Tipo de Plano</h3>
+                <p className="text-xs text-slate-400">Distribuição percentual da receita</p>
+              </div>
+
+              {/* Toggle Metric */}
+              <div className="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800 text-[10px] font-bold">
+                <button
+                  type="button"
+                  onClick={() => setPieMetric('value')}
+                  className={`px-2.5 py-1 rounded-lg transition-colors cursor-pointer ${
+                    pieMetric === 'value' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'
                   }`}
-                />
-                <span className="text-[11px] font-semibold text-slate-400">
-                  {bar.month}
+                >
+                  R$ Valor
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPieMetric('count')}
+                  className={`px-2.5 py-1 rounded-lg transition-colors cursor-pointer ${
+                    pieMetric === 'count' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  Qtd
+                </button>
+              </div>
+            </div>
+
+            {/* Recharts Pie Chart */}
+            <div className="w-full h-56 pt-2">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={pieChartData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={50}
+                    outerRadius={80}
+                    paddingAngle={4}
+                    dataKey="value"
+                    label={({ percent }) => `${((percent || 0) * 100).toFixed(0)}%`}
+                    labelLine={false}
+                  >
+                    {pieChartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} stroke="#0f172a" strokeWidth={2} />
+                    ))}
+                  </Pie>
+                  <RechartsTooltip
+                    content={({ active, payload }) => {
+                      if (active && payload && payload.length) {
+                        const item = payload[0].payload;
+                        const pct = totalPieSum > 0 ? ((item.value / totalPieSum) * 100).toFixed(1) : '0';
+                        return (
+                          <div className="bg-slate-950/95 border border-slate-700 p-3 rounded-2xl shadow-xl backdrop-blur-md text-xs space-y-1">
+                            <div className="font-bold text-white flex items-center gap-2">
+                              <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
+                              <span>{item.name}</span>
+                            </div>
+                            <div className="text-slate-300">
+                              Faturamento: <strong className="text-white font-mono">{formatCurrencyBRL(item.totalValue)}</strong>
+                            </div>
+                            <div className="text-slate-400">
+                              Contratos: <strong className="text-white">{item.count} un</strong> ({pct}%)
+                            </div>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Custom Interactive Legend Badges */}
+            <div className="grid grid-cols-2 gap-2 pt-2">
+              {pieChartData.map((item, idx) => {
+                const pct = totalPieSum > 0 ? Math.round((item.value / totalPieSum) * 100) : 0;
+                return (
+                  <div key={idx} className="bg-slate-950/70 border border-slate-800/80 rounded-xl p-2 flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[11px] font-bold text-slate-200 truncate">{item.name}</div>
+                      <div className="text-[10px] text-slate-400 flex items-center justify-between">
+                        <span>{item.count} contratos</span>
+                        <span className="font-bold text-white">{pct}%</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="p-2.5 bg-slate-950 rounded-2xl border border-slate-800 text-[11px] text-slate-400 flex items-center gap-2">
+            <span className="text-blue-400 font-bold shrink-0">💡 Destaque:</span>
+            <span>O <strong>Plano Pro Aceleração</strong> é o mais representativo por incluir cartões NFC + Google Mapas + Instagram.</span>
+          </div>
+        </div>
+      </div>
+
+      {/* ======================================================== */}
+      {/* SEÇÃO DE COMISSÕES DOS CORRETORES: APENAS NO PAINEL ADM   */}
+      {/* ======================================================== */}
+      {isAdmin ? (
+        /* PAINEL ADMINISTRATIVO AUTORIZADO (Exibição apenas para administradores autenticados) */
+        <div className="bg-gradient-to-br from-slate-900 via-slate-900/90 to-purple-950/50 border border-purple-500/40 rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl relative">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-purple-500/20 pb-4">
+            <div>
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-500/20 border border-purple-500/30 text-purple-300 text-xs font-bold uppercase tracking-wider mb-2">
+                <ShieldCheck className="w-4 h-4 text-purple-400" />
+                <span>Painel Administrativo da Diretoria • Acesso Exclusivo</span>
+              </div>
+              <h3 className="text-xl sm:text-2xl font-black text-white">
+                Gestão de Comissões dos Consultores (50%)
+              </h3>
+              <p className="text-xs text-slate-300">
+                Visualização restrita da equipe de corretores credenciados (Francisco Araújo, Bernardo Araújo, Witor Araújo).
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {onNavigateToBrokersTab && (
+                <button
+                  onClick={onNavigateToBrokersTab}
+                  className="bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs px-4 py-2 rounded-xl transition-colors flex items-center gap-1.5 shadow-md shadow-purple-600/30 cursor-pointer"
+                >
+                  <Users className="w-3.5 h-3.5" />
+                  <span>Abrir Gestão Completa de Corretores</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Brokers KPI Summary para Administração */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="bg-slate-950/80 border border-purple-900/40 p-4 rounded-2xl">
+              <span className="text-[11px] font-bold text-slate-400 uppercase">Total Comissões Geradas (50%)</span>
+              <div className="text-2xl font-black text-purple-300 mt-1">
+                {formatCurrencyBRL(contracts.reduce((sum, c) => sum + (c.commissionValue || c.totalValue * 0.5), 0))}
+              </div>
+              <span className="text-[10px] text-slate-500">50% do total faturado dos contratos</span>
+            </div>
+            <div className="bg-slate-950/80 border border-emerald-900/40 p-4 rounded-2xl">
+              <span className="text-[11px] font-bold text-emerald-400 uppercase">Comissões Pagas via Pix</span>
+              <div className="text-2xl font-black text-emerald-400 mt-1">
+                {formatCurrencyBRL(
+                  contracts
+                    .filter((c) => c.commissionStatus === 'paid')
+                    .reduce((sum, c) => sum + (c.commissionValue || c.totalValue * 0.5), 0)
+                )}
+              </div>
+              <span className="text-[10px] text-emerald-500">Transferências Pix já liquidadas</span>
+            </div>
+            <div className="bg-slate-950/80 border border-amber-900/40 p-4 rounded-2xl">
+              <span className="text-[11px] font-bold text-amber-400 uppercase">Comissões Pendentes</span>
+              <div className="text-2xl font-black text-amber-400 mt-1">
+                {formatCurrencyBRL(
+                  contracts
+                    .filter((c) => c.commissionStatus !== 'paid')
+                    .reduce((sum, c) => sum + (c.commissionValue || c.totalValue * 0.5), 0)
+                )}
+              </div>
+              <span className="text-[10px] text-amber-400/80">Aguardando confirmação e Pix</span>
+            </div>
+          </div>
+
+          {/* Individual Performance Cards (Admin Only) */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {brokers.map((broker) => {
+              const bContracts = contracts.filter(
+                (c) => c.brokerId === broker.id || c.brokerName?.toLowerCase() === broker.name.toLowerCase()
+              );
+              const totalFaturado = bContracts.reduce((sum, c) => sum + c.totalValue, 0);
+              const totalComissao = bContracts.reduce((sum, c) => sum + (c.commissionValue || c.totalValue * 0.5), 0);
+              const pendente = bContracts
+                .filter((c) => c.commissionStatus !== 'paid')
+                .reduce((sum, c) => sum + (c.commissionValue || c.totalValue * 0.5), 0);
+
+              const isCopied = copiedPixId === broker.id;
+
+              return (
+                <div
+                  key={broker.id}
+                  className="bg-slate-950/90 border border-slate-800 rounded-2xl p-4 space-y-3 hover:border-purple-500/50 transition-all"
+                >
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h4 className="font-black text-white text-base">{broker.name}</h4>
+                      <span className="text-[10px] text-slate-400">{bContracts.length} contratos fechados</span>
+                    </div>
+                    <div className="w-8 h-8 rounded-xl bg-purple-600/20 text-purple-300 flex items-center justify-center font-bold text-xs">
+                      {broker.name.split(' ').map((n) => n[0]).slice(0, 2).join('')}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-xs border-y border-slate-800/60 py-2.5">
+                    <div>
+                      <span className="text-[10px] text-slate-500 block">Vendas Totais</span>
+                      <span className="font-bold text-slate-200">{formatCurrencyBRL(totalFaturado)}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-slate-500 block">Comissão (50%)</span>
+                      <span className="font-bold text-emerald-400">{formatCurrencyBRL(totalComissao)}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-slate-400">Pendente Pix:</span>
+                    <span className={`font-bold ${pendente > 0 ? 'text-amber-400' : 'text-slate-500'}`}>
+                      {pendente > 0 ? formatCurrencyBRL(pendente) : '✓ Quitado'}
+                    </span>
+                  </div>
+
+                  {/* Pix key and copy */}
+                  <div className="pt-1 flex items-center justify-between gap-1 text-[11px] bg-slate-900 px-2.5 py-1.5 rounded-lg border border-slate-800">
+                    <span className="font-mono text-emerald-400 truncate text-[10px]">{broker.pixKey}</span>
+                    <button
+                      onClick={() => handleCopyPix(broker.pixKey, broker.id)}
+                      className="text-slate-400 hover:text-white flex items-center gap-1 cursor-pointer shrink-0 text-[10px]"
+                      title="Copiar Chave Pix"
+                    >
+                      {isCopied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                      <span>{isCopied ? 'Copiado' : 'Pix'}</span>
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ) : (
+        /* PAINEL NÃO-ADMINISTRATIVO (Visualização de comissões protegida e ocultada) */
+        <div className="bg-slate-900/50 border border-slate-800/80 rounded-3xl p-6 sm:p-7 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg">
+          <div className="flex items-center gap-4">
+            <div className="p-3.5 rounded-2xl bg-slate-800/80 text-amber-400 border border-slate-700/60 shrink-0">
+              <Lock className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-white text-base">Comissões & Repasses de Consultores</span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 font-bold uppercase">
+                  Apenas Painel Administrativo
                 </span>
               </div>
-            ))}
-          </div>
-
-          <div className="flex items-center justify-between text-xs text-slate-400 pt-2">
-            <span>• Meta Fixada: <strong>30 Clientes ({formatCurrencyBRL(projected30Annual)}/ano)</strong></span>
-            <span>• Atingimento: <strong className="text-emerald-400">{targetProgressPct}% ({activeContractsCount}/30)</strong></span>
-          </div>
-        </div>
-
-        {/* Revenue Distribution by Solution */}
-        <div className="bg-slate-900/60 border border-slate-800 p-6 rounded-3xl space-y-4 flex flex-col justify-between">
-          <div>
-            <h3 className="text-base font-bold text-white">Distribuição por Solução</h3>
-            <p className="text-xs text-slate-400">Origem da receita dos contratos</p>
-
-            <div className="space-y-3.5 mt-5">
-              {[
-                { name: 'Planos Mensais & Anuais', pct: 54, color: 'bg-blue-500' },
-                { name: 'Cartões NFC Google Avaliação', pct: 22, color: 'bg-amber-500' },
-                { name: 'Implantação Google Empresa & Mapas', pct: 14, color: 'bg-emerald-500' },
-                { name: 'Instagram & Design de Posts', pct: 10, color: 'bg-purple-500' },
-              ].map((item, idx) => (
-                <div key={idx} className="space-y-1">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-slate-300 font-medium">{item.name}</span>
-                    <span className="text-slate-400 font-bold">{item.pct}%</span>
-                  </div>
-                  <div className="w-full bg-slate-950 h-2 rounded-full overflow-hidden">
-                    <div className={`h-full ${item.color}`} style={{ width: `${item.pct}%` }} />
-                  </div>
-                </div>
-              ))}
+              <p className="text-xs text-slate-400 mt-1 max-w-2xl">
+                Em conformidade com a política de governança interna da Retoma Digital, as comissões de consultores (50%), chaves Pix e comprovantes de repasse são exibidos <strong>exclusivamente na área administrativa da diretoria</strong>.
+              </p>
             </div>
           </div>
 
-          <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800 text-xs text-slate-400">
-            💡 <strong>Insight:</strong> Os planos anuais aumentaram a retenção em 94% e garantem fluxo de caixa antecipado.
-          </div>
-        </div>
-      </div>
-
-      {/* Relatório de Vendas de Corretores no Dashboard */}
-      <div className="bg-slate-900/70 border border-purple-900/40 rounded-3xl p-6 sm:p-8 space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
-          <div>
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300 text-xs font-semibold mb-2">
-              <Users className="w-3.5 h-3.5" />
-              <span>Painel de Desempenho Comercial</span>
-            </div>
-            <h3 className="text-xl font-bold text-white">Relatório de Vendas & Comissões dos Corretores (50%)</h3>
-            <p className="text-xs text-slate-400">
-              Desempenho de vendas de Francisco Araújo, Bernardo Araújo, Witor Araújo e equipe com comissão de 50%.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-slate-400">Comissão por Venda:</span>
-            <span className="bg-emerald-500/20 text-emerald-300 text-xs font-black px-3 py-1 rounded-xl border border-emerald-500/30">
-              50% por Contrato
-            </span>
-          </div>
-        </div>
-
-        {/* Brokers KPI Summary */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="bg-slate-950/60 border border-slate-800 p-4 rounded-2xl">
-            <span className="text-[11px] font-bold text-slate-400 uppercase">Total Comissões Geradas (50%)</span>
-            <div className="text-2xl font-black text-white mt-1">
-              {formatCurrencyBRL(contracts.reduce((sum, c) => sum + (c.commissionValue || c.totalValue * 0.5), 0))}
-            </div>
-            <span className="text-[10px] text-slate-500">50% do faturamento de contratos</span>
-          </div>
-          <div className="bg-slate-950/60 border border-slate-800 p-4 rounded-2xl">
-            <span className="text-[11px] font-bold text-emerald-400 uppercase">Comissões Pagas via Pix</span>
-            <div className="text-2xl font-black text-emerald-400 mt-1">
-              {formatCurrencyBRL(
-                contracts
-                  .filter((c) => c.commissionStatus === 'paid')
-                  .reduce((sum, c) => sum + (c.commissionValue || c.totalValue * 0.5), 0)
-              )}
-            </div>
-            <span className="text-[10px] text-emerald-500">Liquidadas para os corretores</span>
-          </div>
-          <div className="bg-slate-950/60 border border-slate-800 p-4 rounded-2xl">
-            <span className="text-[11px] font-bold text-amber-400 uppercase">Comissões A Pagar (Pendentes)</span>
-            <div className="text-2xl font-black text-amber-400 mt-1">
-              {formatCurrencyBRL(
-                contracts
-                  .filter((c) => c.commissionStatus !== 'paid')
-                  .reduce((sum, c) => sum + (c.commissionValue || c.totalValue * 0.5), 0)
-              )}
-            </div>
-            <span className="text-[10px] text-amber-400/80">Aguardando transferência Pix</span>
-          </div>
-        </div>
-
-        {/* Brokers Individual Performance Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {brokers.map((broker) => {
-            const bContracts = contracts.filter(
-              (c) => c.brokerId === broker.id || c.brokerName?.toLowerCase() === broker.name.toLowerCase()
-            );
-            const totalFaturado = bContracts.reduce((sum, c) => sum + c.totalValue, 0);
-            const totalComissao = bContracts.reduce((sum, c) => sum + (c.commissionValue || c.totalValue * 0.5), 0);
-            const pendente = bContracts
-              .filter((c) => c.commissionStatus !== 'paid')
-              .reduce((sum, c) => sum + (c.commissionValue || c.totalValue * 0.5), 0);
-
-            const isCopied = copiedPixId === broker.id;
-
-            return (
-              <div
-                key={broker.id}
-                className="bg-slate-950/80 border border-slate-800/80 rounded-2xl p-4 space-y-3 hover:border-purple-500/50 transition-all"
+          <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
+            {onOpenAuthModal && (
+              <button
+                onClick={onOpenAuthModal}
+                className="w-full sm:w-auto bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer"
               >
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h4 className="font-black text-white text-base">{broker.name}</h4>
-                    <span className="text-[10px] text-slate-400">{bContracts.length} contratos fechados</span>
-                  </div>
-                  <div className="w-8 h-8 rounded-xl bg-purple-600/20 text-purple-300 flex items-center justify-center font-bold text-xs">
-                    {broker.name.split(' ').map((n) => n[0]).slice(0, 2).join('')}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 text-xs border-y border-slate-800/60 py-2.5">
-                  <div>
-                    <span className="text-[10px] text-slate-500 block">Vendas Totais</span>
-                    <span className="font-bold text-slate-200">{formatCurrencyBRL(totalFaturado)}</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-500 block">Comissão (50%)</span>
-                    <span className="font-bold text-emerald-400">{formatCurrencyBRL(totalComissao)}</span>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-slate-400">Pendente Pix:</span>
-                  <span className={`font-bold ${pendente > 0 ? 'text-amber-400' : 'text-slate-500'}`}>
-                    {pendente > 0 ? formatCurrencyBRL(pendente) : '✓ Quitado'}
-                  </span>
-                </div>
-
-                {/* Pix key and copy */}
-                <div className="pt-1 flex items-center justify-between gap-1 text-[11px] bg-slate-900 px-2.5 py-1.5 rounded-lg border border-slate-800">
-                  <span className="font-mono text-emerald-400 truncate text-[10px]">{broker.pixKey}</span>
-                  <button
-                    onClick={() => handleCopyPix(broker.pixKey, broker.id)}
-                    className="text-slate-400 hover:text-white flex items-center gap-1 cursor-pointer shrink-0 text-[10px]"
-                    title="Copiar Pix"
-                  >
-                    {isCopied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                    <span>{isCopied ? 'OK' : 'Pix'}</span>
-                  </button>
-                </div>
-              </div>
-            );
-          })}
+                <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                <span>Entrar como Administrador</span>
+              </button>
+            )}
+            {onNavigateToBrokersTab && (
+              <button
+                onClick={onNavigateToBrokersTab}
+                className="w-full sm:w-auto bg-blue-600 hover:bg-blue-500 text-white px-4 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer"
+              >
+                <span>Acessar Painel</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Contracts Table Section */}
       <div className="bg-slate-900/70 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6">
@@ -641,7 +929,7 @@ export const FinancialDashboard: React.FC<FinancialDashboardProps> = ({
           <div>
             <h3 className="text-xl font-bold text-white">Todos os Contratos Registrados</h3>
             <p className="text-xs text-slate-400">
-              Emissão de PDF, comissão de 50%, envio para WhatsApp e acompanhamento de vigência.
+              Emissão de PDF, envio para WhatsApp oficial e acompanhamento de vigência.
             </p>
           </div>
 
@@ -678,18 +966,22 @@ export const FinancialDashboard: React.FC<FinancialDashboardProps> = ({
               <tr>
                 <th className="py-3 px-4">Contrato</th>
                 <th className="py-3 px-4">Cliente / Razão Social</th>
-                <th className="py-3 px-4">Corretor (50%)</th>
                 <th className="py-3 px-4">Plano / Itens</th>
                 <th className="py-3 px-4">Valor Total</th>
-                <th className="py-3 px-4">Comissão (50%)</th>
-                <th className="py-3 px-4">Status Pix</th>
+                {isAdmin && (
+                  <>
+                    <th className="py-3 px-4">Corretor (50%)</th>
+                    <th className="py-3 px-4">Comissão (50%)</th>
+                    <th className="py-3 px-4">Status Pix</th>
+                  </>
+                )}
+                <th className="py-3 px-4">Status Contrato</th>
                 <th className="py-3 px-4 text-right">Ações Oficiais</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60">
               {filteredContracts.map((c) => {
                 const whatsOfficialUrl = getWhatsAppContractUrl(c, RETOMA_WHATSAPP_OFFICIAL);
-                const whatsClientUrl = getWhatsAppContractUrl(c, c.client.whatsapp);
                 const commVal = c.commissionValue || c.totalValue * 0.5;
                 const isCommPaid = c.commissionStatus === 'paid';
                 const broker = brokers.find((b) => b.id === c.brokerId || b.name === c.brokerName);
@@ -706,14 +998,6 @@ export const FinancialDashboard: React.FC<FinancialDashboardProps> = ({
                       </div>
                     </td>
                     <td className="py-3.5 px-4">
-                      <div className="font-bold text-purple-300">
-                        {c.brokerName || 'Francisco Araújo'}
-                      </div>
-                      <div className="text-[10px] text-slate-400">
-                        {broker ? `Pix: ${broker.pixKey}` : 'Corretor'}
-                      </div>
-                    </td>
-                    <td className="py-3.5 px-4">
                       <div className="font-semibold text-slate-200">
                         {c.planName || 'Personalizado'}
                       </div>
@@ -724,29 +1008,54 @@ export const FinancialDashboard: React.FC<FinancialDashboardProps> = ({
                     <td className="py-3.5 px-4 font-black text-white whitespace-nowrap">
                       {formatCurrencyBRL(c.totalValue)}
                     </td>
-                    <td className="py-3.5 px-4 font-black text-emerald-400 whitespace-nowrap">
-                      {formatCurrencyBRL(commVal)}
+                    
+                    {/* Colunas Administrativas Exclusivas para Admin */}
+                    {isAdmin && (
+                      <>
+                        <td className="py-3.5 px-4">
+                          <div className="font-bold text-purple-300">
+                            {c.brokerName || 'Francisco Araújo'}
+                          </div>
+                          <div className="text-[10px] text-slate-400">
+                            {broker ? `Pix: ${broker.pixKey}` : 'Corretor'}
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-4 font-black text-emerald-400 whitespace-nowrap">
+                          {formatCurrencyBRL(commVal)}
+                        </td>
+                        <td className="py-3.5 px-4">
+                          {isCommPaid ? (
+                            <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full font-bold text-[10px] inline-flex items-center gap-1">
+                              <CheckCircle2 className="w-3 h-3" />
+                              <span>Pix Pago</span>
+                            </span>
+                          ) : (
+                            <div className="flex items-center gap-1.5">
+                              <span className="bg-amber-500/10 text-amber-300 border border-amber-500/20 px-2 py-0.5 rounded-full font-bold text-[10px]">
+                                Pendente
+                              </span>
+                              <button
+                                onClick={() => handlePay(c.id)}
+                                className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[10px] px-2 py-0.5 rounded transition-colors cursor-pointer"
+                              >
+                                Pagar
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                      </>
+                    )}
+
+                    <td className="py-3.5 px-4 whitespace-nowrap">
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
+                        c.status === 'active'
+                          ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                          : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                      }`}>
+                        {c.status === 'active' ? 'Ativo' : 'Pendente'}
+                      </span>
                     </td>
-                    <td className="py-3.5 px-4">
-                      {isCommPaid ? (
-                        <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full font-bold text-[10px] inline-flex items-center gap-1">
-                          <CheckCircle2 className="w-3 h-3" />
-                          <span>Pix Pago</span>
-                        </span>
-                      ) : (
-                        <div className="flex items-center gap-1.5">
-                          <span className="bg-amber-500/10 text-amber-300 border border-amber-500/20 px-2 py-0.5 rounded-full font-bold text-[10px]">
-                            Pendente
-                          </span>
-                          <button
-                            onClick={() => handlePay(c.id)}
-                            className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[10px] px-2 py-0.5 rounded transition-colors cursor-pointer"
-                          >
-                            Pagar
-                          </button>
-                        </div>
-                      )}
-                    </td>
+
                     <td className="py-3.5 px-4 text-right whitespace-nowrap">
                       <div className="flex items-center justify-end gap-1.5">
                         {/* Baixar PDF Contrato */}
@@ -758,14 +1067,16 @@ export const FinancialDashboard: React.FC<FinancialDashboardProps> = ({
                           <Download className="w-4 h-4" />
                         </button>
 
-                        {/* Baixar Recibo de Comissão PDF */}
-                        <button
-                          onClick={() => handleDownloadCommissionReceipt(c, c.brokerName || 'Francisco Araújo', broker?.pixKey)}
-                          className="p-1.5 rounded-lg bg-purple-950/60 hover:bg-purple-900 text-purple-300 transition-colors cursor-pointer"
-                          title="Baixar Recibo de Comissão (50%) em PDF"
-                        >
-                          <FileText className="w-4 h-4" />
-                        </button>
+                        {/* Baixar Recibo de Comissão PDF (Admin Only) */}
+                        {isAdmin && (
+                          <button
+                            onClick={() => handleDownloadCommissionReceipt(c, c.brokerName || 'Francisco Araújo', broker?.pixKey)}
+                            className="p-1.5 rounded-lg bg-purple-950/60 hover:bg-purple-900 text-purple-300 transition-colors cursor-pointer"
+                            title="Baixar Recibo de Comissão (50%) em PDF"
+                          >
+                            <FileText className="w-4 h-4" />
+                          </button>
+                        )}
 
                         {/* Enviar WhatsApp Oficial 68 99282-7744 */}
                         <a
