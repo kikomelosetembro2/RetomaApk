@@ -12,17 +12,21 @@ import {
   HelpCircle,
   ArrowRight,
   Calculator,
-  Star
+  Star,
+  Smartphone,
+  Download
 } from 'lucide-react';
 
 interface PlansTabProps {
   onSelectPlanForContract: (plan: Plan, cycle: BillingCycle) => void;
   onOpen3DCard: () => void;
+  onOpenInstallModal?: () => void;
 }
 
 export const PlansTab: React.FC<PlansTabProps> = ({
   onSelectPlanForContract,
   onOpen3DCard,
+  onOpenInstallModal,
 }) => {
   const [cycle, setCycle] = useState<BillingCycle>('annual');
   const [monthlyClients, setMonthlyClients] = useState<number>(30);
@@ -319,6 +323,38 @@ export const PlansTab: React.FC<PlansTabProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Mobile App APK / Home Screen Launcher Promo Card */}
+      {onOpenInstallModal && (
+        <div className="max-w-4xl mx-auto rounded-3xl bg-gradient-to-r from-slate-900 via-indigo-950/70 to-slate-900 border border-cyan-500/30 p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-2xl">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shrink-0 shadow-lg shadow-cyan-500/20">
+              <Smartphone className="w-7 h-7 text-white" />
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="text-base font-bold text-white">
+                  💿 Aplicativo Retoma na Tela Inicial do seu Celular
+                </span>
+                <span className="px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-[10px] font-bold uppercase">
+                  PWA / APK
+                </span>
+              </div>
+              <p className="text-xs text-slate-300">
+                Instale agora para acessar offline, demonstrar para clientes sem navegador e emitir contratos instantaneamente em visitas presenciais.
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={onOpenInstallModal}
+            className="w-full sm:w-auto px-5 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-xs whitespace-nowrap shadow-lg shadow-cyan-500/25 flex items-center justify-center gap-2 transition-all cursor-pointer"
+          >
+            <Download className="w-4 h-4" />
+            <span>Instalar Aplicativo Agora</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 };

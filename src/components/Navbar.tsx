@@ -12,7 +12,9 @@ import {
   Lock,
   LogOut,
   CheckCircle,
-  User
+  User,
+  Smartphone,
+  Download
 } from 'lucide-react';
 import retomaLogo from '../assets/logo.png';
 import { RETOMA_PHONE_DISPLAY, RETOMA_WHATSAPP_OFFICIAL } from '../data/initialData';
@@ -28,6 +30,8 @@ interface NavbarProps {
   currentUser: AuthUser | null;
   onOpenAuthModal: () => void;
   onLogout: () => void;
+  onOpenInstallModal?: () => void;
+  isInstalled?: boolean;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -38,6 +42,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   currentUser,
   onOpenAuthModal,
   onLogout,
+  onOpenInstallModal,
+  isInstalled,
 }) => {
   const tabs = [
     { id: 'plans' as NavTab, label: 'Planos Mensal / Anual', icon: Sparkles, badge: 'Economize 20%' },
@@ -119,8 +125,21 @@ export const Navbar: React.FC<NavbarProps> = ({
             })}
           </nav>
 
-          {/* User Auth & WhatsApp CTAs */}
+          {/* User Auth, Install App & WhatsApp CTAs */}
           <div className="flex items-center gap-2">
+            {/* Install PWA Button */}
+            {!isInstalled && onOpenInstallModal && (
+              <button
+                onClick={onOpenInstallModal}
+                className="relative bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white px-2.5 sm:px-3 py-2 rounded-xl text-xs font-bold transition-all shadow-md shadow-cyan-600/20 flex items-center gap-1.5 cursor-pointer whitespace-nowrap animate-pulse hover:animate-none"
+                title="Instalar ícone do aplicativo no celular ou computador"
+              >
+                <Smartphone className="w-3.5 h-3.5 text-cyan-200" />
+                <span className="hidden sm:inline">Instalar App</span>
+                <span className="sm:hidden">Instalar</span>
+              </button>
+            )}
+
             {currentUser ? (
               <div className="flex items-center gap-2 bg-slate-950/80 border border-slate-700/80 p-1 pl-2.5 rounded-xl">
                 <div className="flex items-center gap-2">
@@ -171,6 +190,16 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         {/* Mobile Navigation bar */}
         <div className="lg:hidden flex items-center overflow-x-auto py-2.5 space-x-1 scrollbar-none border-t border-slate-800/80">
+          {!isInstalled && onOpenInstallModal && (
+            <button
+              onClick={onOpenInstallModal}
+              className="px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap flex items-center gap-1.5 shrink-0 bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-sm"
+            >
+              <Smartphone className="w-3.5 h-3.5" />
+              <span>Instalar no Celular</span>
+            </button>
+          )}
+
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = currentTab === tab.id;

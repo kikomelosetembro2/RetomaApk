@@ -20,8 +20,11 @@ import {
   RETOMA_WHATSAPP_OFFICIAL,
   PROJECT_COPYRIGHT_TEXT 
 } from './data/initialData';
-import { MessageCircle, ShieldCheck, Sparkles, MapPin, Phone, Lock, UserPlus, LogIn, CheckCircle } from 'lucide-react';
+import { MessageCircle, ShieldCheck, Sparkles, MapPin, Phone, Lock, UserPlus, LogIn, CheckCircle, Smartphone, Download } from 'lucide-react';
 import retomaLogo from './assets/logo.png';
+import { usePWAInstall } from './hooks/usePWAInstall';
+import { PWAInstallModal } from './components/PWAInstallModal';
+import { PWAInstallBanner } from './components/PWAInstallBanner';
 
 export default function App() {
   const [currentTab, setCurrentTab] = useState<NavTab>('plans');
@@ -43,6 +46,16 @@ export default function App() {
     joinedAt: '2026-01-10',
   });
   const [showAuthModal, setShowAuthModal] = useState<boolean>(false);
+
+  // PWA & Mobile Home Screen Installation Hook
+  const {
+    isInstalled,
+    isIOS,
+    hasNativePrompt,
+    isInstallModalOpen,
+    setIsInstallModalOpen,
+    triggerInstall,
+  } = usePWAInstall();
 
   const handleAddBroker = (newBroker: Broker) => {
     setBrokers((prev) => [...prev, newBroker]);
@@ -115,6 +128,12 @@ export default function App() {
         </div>
       </div>
 
+      {/* PWA Mobile & Desktop Install Prompt Banner */}
+      <PWAInstallBanner
+        onOpenModal={() => setIsInstallModalOpen(true)}
+        isInstalled={isInstalled}
+      />
+
       {/* Main Navigation Bar */}
       <Navbar
         currentTab={currentTab}
@@ -124,6 +143,8 @@ export default function App() {
         currentUser={currentUser}
         onOpenAuthModal={() => setShowAuthModal(true)}
         onLogout={() => setCurrentUser(null)}
+        onOpenInstallModal={() => setIsInstallModalOpen(true)}
+        isInstalled={isInstalled}
       />
 
       {/* Main Container Content */}
@@ -132,6 +153,7 @@ export default function App() {
           <PlansTab
             onSelectPlanForContract={handleSelectPlanForContract}
             onOpen3DCard={() => setCurrentTab('card3d')}
+            onOpenInstallModal={() => setIsInstallModalOpen(true)}
           />
         )}
 
@@ -275,6 +297,16 @@ export default function App() {
         brokers={brokers}
       />
 
+      {/* PWA Mobile App Installation Modal */}
+      <PWAInstallModal
+        isOpen={isInstallModalOpen}
+        onClose={() => setIsInstallModalOpen(false)}
+        onInstall={triggerInstall}
+        hasNativePrompt={hasNativePrompt}
+        isIOS={isIOS}
+        isInstalled={isInstalled}
+      />
+
       {/* Footer - Presente em todas as páginas do projeto */}
       <footer className="bg-slate-900 border-t border-slate-800 text-slate-400 text-xs py-8 mt-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
@@ -294,6 +326,14 @@ export default function App() {
             </div>
 
             <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 text-slate-400 text-xs">
+              <button
+                onClick={() => setIsInstallModalOpen(true)}
+                className="text-cyan-400 hover:text-cyan-300 font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <Smartphone className="w-3.5 h-3.5" />
+                <span>{isInstalled ? 'App Instalado' : '💿 Instalar Aplicativo no Celular'}</span>
+              </button>
+              <span>•</span>
               <span>Suporte WhatsApp: <strong>{RETOMA_PHONE_DISPLAY}</strong></span>
               <span>•</span>
               <span>Cartão NFC Homologado</span>
