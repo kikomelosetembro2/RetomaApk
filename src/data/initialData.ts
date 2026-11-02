@@ -66,6 +66,21 @@ export const INITIAL_BROKERS: Broker[] = [
     joinedAt: '2026-03-01',
     verificationBadge: 'VERIFICADO-GMAIL-WIT-2026',
   },
+  {
+    id: 'broker_etevino',
+    name: 'Etevino de Araújo',
+    email: 'etevino.araujo@gmail.com',
+    gmailVerified: true,
+    phone: '(68) 99984-4567',
+    whatsapp: '68999844567',
+    cpf: '345.678.901-23',
+    pixKey: 'etevino.araujo@pix.com.br',
+    pixKeyType: 'email',
+    active: true,
+    commissionRate: 0.50, // 50% de comissão por venda
+    joinedAt: '2026-03-10',
+    verificationBadge: 'VERIFICADO-GMAIL-ETEV-2026',
+  },
 ];
 
 export const INITIAL_PLANS: Plan[] = [
@@ -383,6 +398,50 @@ export const INITIAL_CONTRACTS: ContractItem[] = [
     commissionRate: 0.50,
     commissionValue: 2394.0, // 50% de 4788
     commissionStatus: 'pending',
+  },
+  {
+    id: 'cont_1004',
+    contractNumber: 'RET-2026-0044',
+    client: {
+      companyName: 'Panificadora & Confeitaria Pão de Ouro Ltda',
+      tradeName: 'Pão de Ouro Padaria',
+      documentType: 'CNPJ',
+      documentNumber: '08.412.983/0001-55',
+      representativeName: 'Sebastião Mendonça Lima',
+      phone: '(68) 3226-7788',
+      whatsapp: '68999845566',
+      email: 'contato@padariapaodeouro.com.br',
+      addressStreet: 'Avenida Nações Unidas',
+      addressNumber: '1780',
+      addressNeighborhood: 'Estação Experimental',
+      addressCity: 'Rio Branco',
+      addressState: 'AC',
+      addressZip: '69918-080',
+      businessSegment: 'Padaria e Cafeteria',
+    },
+    planId: 'plan_pro',
+    planName: 'Plano Pro Aceleração',
+    billingCycle: 'annual',
+    selectedProducts: [
+      { productId: 'prod_nfc_card', productTitle: 'Cartão NFC Google Avaliação', quantity: 2, unitPrice: 97.0 },
+      { productId: 'prod_google_empresa', productTitle: 'Implantação de Google Empresa', quantity: 1, unitPrice: 249.0 },
+      { productId: 'prod_google_maps', productTitle: 'Implantação de Google Mapas', quantity: 1, unitPrice: 180.0 },
+    ],
+    totalValue: 2748.0,
+    paymentMethod: 'pix',
+    installments: 1,
+    status: 'active',
+    signedAt: '2026-10-30T11:20:00Z',
+    validUntil: '2027-10-30T23:59:59Z',
+    digitalSignatureHash: 'RET-HASH-44aa88ff11bc',
+    sentToWhatsappAt: '2026-10-30T11:25:00Z',
+    notes: 'Contrato fechado por Etevino de Araújo. Cartões NFC instalados no balcão e na cafeteria.',
+    brokerId: 'broker_etevino',
+    brokerName: 'Etevino de Araújo',
+    commissionRate: 0.50,
+    commissionValue: 1374.0, // 50% de 2748
+    commissionStatus: 'paid',
+    commissionPaidAt: '2026-10-31T08:30:00Z',
   },
 ];
 

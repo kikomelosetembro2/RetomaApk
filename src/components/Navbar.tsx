@@ -15,7 +15,8 @@ import {
   User,
   Smartphone,
   Download,
-  Boxes
+  Boxes,
+  Play
 } from 'lucide-react';
 import retomaLogo from '../assets/logo.png';
 import { RETOMA_PHONE_DISPLAY, RETOMA_WHATSAPP_OFFICIAL } from '../data/initialData';
@@ -32,6 +33,7 @@ interface NavbarProps {
   onOpenAuthModal: () => void;
   onLogout: () => void;
   onOpenInstallModal?: () => void;
+  onOpenPromoVideo?: () => void;
   isInstalled?: boolean;
 }
 
@@ -44,6 +46,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenAuthModal,
   onLogout,
   onOpenInstallModal,
+  onOpenPromoVideo,
   isInstalled,
 }) => {
   const tabs = [
@@ -129,6 +132,19 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* User Auth, Install App & WhatsApp CTAs */}
           <div className="flex items-center gap-2">
+            {/* Promo Video 30s Button */}
+            {onOpenPromoVideo && (
+              <button
+                onClick={onOpenPromoVideo}
+                className="bg-gradient-to-r from-red-600 via-rose-600 to-amber-600 hover:from-red-500 hover:to-rose-500 text-white px-2.5 sm:px-3 py-2 rounded-xl text-xs font-bold transition-all shadow-md shadow-red-600/20 flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+                title="Assista ao vídeo de 30 segundos sobre como sua empresa é localizada no Google Maps"
+              >
+                <Play className="w-3.5 h-3.5 fill-white" />
+                <span className="hidden sm:inline">Vídeo 30s Maps</span>
+                <span className="sm:hidden">Vídeo</span>
+              </button>
+            )}
+
             {/* Install PWA Button */}
             {!isInstalled && onOpenInstallModal && (
               <button
@@ -192,6 +208,16 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         {/* Mobile Navigation bar */}
         <div className="lg:hidden flex items-center overflow-x-auto py-2.5 space-x-1 scrollbar-none border-t border-slate-800/80">
+          {onOpenPromoVideo && (
+            <button
+              onClick={onOpenPromoVideo}
+              className="px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap flex items-center gap-1.5 shrink-0 bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-sm"
+            >
+              <Play className="w-3.5 h-3.5 fill-white" />
+              <span>Vídeo 30s</span>
+            </button>
+          )}
+
           {!isInstalled && onOpenInstallModal && (
             <button
               onClick={onOpenInstallModal}

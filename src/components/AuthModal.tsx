@@ -357,6 +357,30 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 </span>
               </div>
 
+              {/* Etevino de Araújo */}
+              <div
+                onClick={() => handleQuickLogin('etevino.araujo@gmail.com')}
+                className="p-3 bg-slate-950/70 hover:bg-slate-800 border border-slate-800 rounded-xl flex items-center justify-between cursor-pointer transition-colors group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-teal-600/20 text-teal-300 font-bold text-xs flex items-center justify-center">
+                    EA
+                  </div>
+                  <div>
+                    <div className="font-bold text-xs text-white group-hover:text-blue-400">
+                      Etevino de Araújo
+                    </div>
+                    <div className="text-[10px] text-slate-400 flex items-center gap-1">
+                      <span>etevino.araujo@gmail.com</span>
+                      <CheckCircle className="w-3 h-3 text-emerald-400 inline" />
+                    </div>
+                  </div>
+                </div>
+                <span className="text-[10px] bg-emerald-500/10 text-emerald-300 font-bold px-2 py-0.5 rounded">
+                  Corretor 50%
+                </span>
+              </div>
+
               {/* Master Admin */}
               <div
                 onClick={() => handleQuickLogin('kikomelosetembro2@gmail.com')}

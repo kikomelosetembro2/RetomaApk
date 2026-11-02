@@ -126,7 +126,7 @@ export const BrokersTab: React.FC<BrokersTabProps> = ({
             Equipe de Corretores de Vendas & Comissões
           </h2>
           <p className="text-xs sm:text-sm text-slate-400 mt-1">
-            Gestão dos corretores comerciais (Francisco Araújo, Bernardo Araújo, Witor Araújo e novos membros) com comissão fixa de 50% por contrato emitido.
+            Gestão dos corretores comerciais (Francisco Araújo, Bernardo Araújo, Witor Araújo, Etevino de Araújo e novos membros) com comissão fixa de 50% por contrato emitido.
           </p>
         </div>
 

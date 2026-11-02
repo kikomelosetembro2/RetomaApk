@@ -11,6 +11,7 @@ import { AuthModal } from './components/AuthModal';
 import { Card3DViewer } from './components/Card3DViewer';
 import { ContractSuccessModal } from './components/ContractSuccessModal';
 import { AdminProductPanel } from './components/AdminProductPanel';
+import { PromoVideoModal } from './components/PromoVideoModal';
 import { Plan, BillingCycle, ContractItem, VisitSchedule, ProductItem, Broker, AuthUser } from './types';
 import { 
   INITIAL_CONTRACTS, 
@@ -34,6 +35,7 @@ export default function App() {
   const [selectedPlanForContract, setSelectedPlanForContract] = useState<Plan | null>(INITIAL_PLANS[1]);
   const [selectedCycleForContract, setSelectedCycleForContract] = useState<BillingCycle>('annual');
   const [successModalContract, setSuccessModalContract] = useState<ContractItem | null>(null);
+  const [showPromoVideoModal, setShowPromoVideoModal] = useState<boolean>(false);
 
   // Authenticated User State (default logged as Francisco Araújo to demonstrate the verified experience)
   const [currentUser, setCurrentUser] = useState<AuthUser | null>({
@@ -145,6 +147,7 @@ export default function App() {
         onOpenAuthModal={() => setShowAuthModal(true)}
         onLogout={() => setCurrentUser(null)}
         onOpenInstallModal={() => setIsInstallModalOpen(true)}
+        onOpenPromoVideo={() => setShowPromoVideoModal(true)}
         isInstalled={isInstalled}
       />
 
@@ -155,6 +158,7 @@ export default function App() {
             onSelectPlanForContract={handleSelectPlanForContract}
             onOpen3DCard={() => setCurrentTab('card3d')}
             onOpenInstallModal={() => setIsInstallModalOpen(true)}
+            onOpenPromoVideo={() => setShowPromoVideoModal(true)}
           />
         )}
 
@@ -213,7 +217,7 @@ export default function App() {
                   Área Administrativa & Portal do Corretor
                 </h2>
                 <p className="text-sm text-slate-400 max-w-lg mx-auto">
-                  Acesso restrito para corretores credenciados (Francisco Araújo, Bernardo Araújo, Witor Araújo e equipe) e diretoria com conta Gmail verificada.
+                  Acesso restrito para corretores credenciados (Francisco Araújo, Bernardo Araújo, Witor Araújo, Etevino de Araújo e equipe) e diretoria com conta Gmail verificada.
                 </p>
               </div>
 
@@ -314,6 +318,19 @@ export default function App() {
         hasNativePrompt={hasNativePrompt}
         isIOS={isIOS}
         isInstalled={isInstalled}
+      />
+
+      {/* 30-Second Commercial Showcase Video Modal */}
+      <PromoVideoModal
+        isOpen={showPromoVideoModal}
+        onClose={() => setShowPromoVideoModal(false)}
+        onContractClick={() => {
+          setSelectedPlanForContract(INITIAL_PLANS[1]);
+          setCurrentTab('contract');
+        }}
+        onScheduleClick={() => {
+          setCurrentTab('schedule');
+        }}
       />
 
       {/* Footer - Presente em todas as páginas do projeto */}

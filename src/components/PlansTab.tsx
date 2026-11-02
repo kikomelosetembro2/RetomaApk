@@ -14,19 +14,23 @@ import {
   Calculator,
   Star,
   Smartphone,
-  Download
+  Download,
+  Play
 } from 'lucide-react';
+import { PromoVideoPlayer } from './PromoVideoPlayer';
 
 interface PlansTabProps {
   onSelectPlanForContract: (plan: Plan, cycle: BillingCycle) => void;
   onOpen3DCard: () => void;
   onOpenInstallModal?: () => void;
+  onOpenPromoVideo?: () => void;
 }
 
 export const PlansTab: React.FC<PlansTabProps> = ({
   onSelectPlanForContract,
   onOpen3DCard,
   onOpenInstallModal,
+  onOpenPromoVideo,
 }) => {
   const [cycle, setCycle] = useState<BillingCycle>('annual');
   const [monthlyClients, setMonthlyClients] = useState<number>(30);
@@ -202,6 +206,27 @@ export const PlansTab: React.FC<PlansTabProps> = ({
             </div>
           );
         })}
+      </div>
+
+      {/* 30-Second Commercial Showcase: Google Maps & NFC Proximity */}
+      <div className="space-y-6 pt-4 max-w-7xl mx-auto">
+        <div className="text-center max-w-3xl mx-auto space-y-2">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-bold uppercase tracking-wider">
+            <Play className="w-3.5 h-3.5 fill-red-400" />
+            <span>Vídeo Comercial Oficial • 30 Segundos</span>
+          </div>
+          <h2 className="text-2xl sm:text-4xl font-black text-white tracking-tight">
+            Como Seu Negócio é Localizado no Google Mapas & As Vantagens em 30 Segundos
+          </h2>
+          <p className="text-xs sm:text-sm text-slate-400 leading-relaxed max-w-2xl mx-auto">
+            Descubra como clientes encontram sua empresa através de Mac, computadores e smartphones, traçam rotas GPS imediatas e avaliam com 5 estrelas usando o Cartão NFC da Retoma Digital.
+          </p>
+        </div>
+
+        <PromoVideoPlayer
+          onContractClick={() => onSelectPlanForContract(INITIAL_PLANS[1], cycle)}
+          onScheduleClick={onOpenPromoVideo}
+        />
       </div>
 
       {/* 3D Showcase Callout Banner */}

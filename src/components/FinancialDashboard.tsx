@@ -765,7 +765,7 @@ export const FinancialDashboard: React.FC<FinancialDashboardProps> = ({
                 Gestão de Comissões dos Consultores (50%)
               </h3>
               <p className="text-xs text-slate-300">
-                Visualização restrita da equipe de corretores credenciados (Francisco Araújo, Bernardo Araújo, Witor Araújo).
+                Visualização restrita da equipe de corretores credenciados (Francisco Araújo, Bernardo Araújo, Witor Araújo e Etevino de Araújo).
               </p>
             </div>
 
