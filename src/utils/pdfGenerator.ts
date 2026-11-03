@@ -145,10 +145,9 @@ export function generateContractPDF(contract: ContractItem): jsPDF {
   );
 
   if (contract.brokerName) {
-    const commVal = contract.commissionValue || contract.totalValue * 0.5;
     printClause(
-      'CLÁUSULA QUINTA - DA INTERMEDIAÇÃO COMERCIAL E COMISSÃO (50%)',
-      `5.1. A intermediação e fechamento da presente venda foram conduzidos pelo(a) Corretor(a) Credenciado(a) ${contract.brokerName}, fazendo jus à comissão comercial pactuada de 50% sobre o valor do contrato, correspondendo a ${formatCurrencyBRL(commVal)}, paga e autorizada pela CONTRATADA via transferência Pix registrada no sistema.`
+      'CLÁUSULA QUINTA - DO ATENDIMENTO E INTERMEDIAÇÃO COMERCIAL',
+      `5.1. A intermediação e atendimento da CONTRATANTE foram conduzidos pelo(a) Consultor(a) Comercial Credenciado(a) ${contract.brokerName}, profissional credenciado pela CONTRATADA para orientação técnica, implantação dos serviços digitais e suporte operacional.`
     );
   }
 

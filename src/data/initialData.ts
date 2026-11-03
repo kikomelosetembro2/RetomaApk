@@ -1,24 +1,106 @@
-import { Plan, ProductItem, ContractItem, VisitSchedule, Broker } from '../types';
+import { Plan, ProductItem, ContractItem, VisitSchedule, Broker, AppAdminUser } from '../types';
 
 export const RETOMA_WHATSAPP_OFFICIAL = '5568992827744';
 export const RETOMA_PHONE_DISPLAY = '(68) 99282-7744';
+export const RETOMA_WHATSAPP_SECONDARY = '5568999811234';
+export const RETOMA_PHONE_SECONDARY_DISPLAY = '(68) 99981-1234';
 export const RETOMA_COMPANY_NAME = 'Retoma Soluções Digitais & Inteligência Local';
 export const RETOMA_CNPJ = '48.912.384/0001-92';
 export const RETOMA_CITY = 'Rio Branco - AC';
 
+// Versão do APK Oficial e Direitos Autorais
+export const APP_APK_VERSION = 'Versão 10/2026-11';
+export const INITIAL_NFC_READY_STOCK = 20;
+
 export const PROJECT_DEVELOPERS = 'Bernardo Araújo e Francisco Araújo';
 export const PROJECT_DEVELOPERS_LOCATION = 'Rio Branco - Acre';
 export const PROJECT_DEVELOPERS_DATE = 'Nov/2026';
-export const PROJECT_COPYRIGHT_TEXT = 'Desenvolvedores do Projeto & Direitos Autorais: Bernardo Araújo e Francisco Araújo • Rio Branco - Acre • Nov/2026';
+export const PROJECT_COPYRIGHT_TEXT = 'Versão do APK: Versão 10/2026-11 • Desenvolvedores do Projeto & Direitos Autorais: Bernardo Araújo e Francisco Araújo • Rio Branco - Acre • Nov/2026';
 
 export const INITIAL_ADMIN = {
   id: 'admin_master',
   name: 'Administração Retoma Digital',
-  email: 'kikomelosetembro2@gmail.com',
+  email: 'admin@retoma.com.br',
   role: 'admin' as const,
   verified: true,
   joinedAt: '2026-01-01',
 };
+
+// Cadastro de Administradores por Nível de Senha e Permissões
+export const INITIAL_APP_ADMINS: AppAdminUser[] = [
+  {
+    id: 'admin_master_1',
+    name: 'Bernardo Araújo',
+    email: 'bernardo.admin@retoma.com.br',
+    password: 'admin2026',
+    permissionLevel: 'master',
+    status: 'ativo',
+    createdAt: '2026-01-01',
+    permissions: {
+      canEditAppInfo: true,
+      canEditPricing: true,
+      canEditStock: true,
+      canViewCommissions: true,
+      canPayCommissions: true,
+      canManageAdmins: true,
+      canManageProducts: true,
+    },
+  },
+  {
+    id: 'admin_master_2',
+    name: 'Francisco Araújo',
+    email: 'francisco.admin@retoma.com.br',
+    password: 'admin2026',
+    permissionLevel: 'master',
+    status: 'ativo',
+    createdAt: '2026-01-01',
+    permissions: {
+      canEditAppInfo: true,
+      canEditPricing: true,
+      canEditStock: true,
+      canViewCommissions: true,
+      canPayCommissions: true,
+      canManageAdmins: true,
+      canManageProducts: true,
+    },
+  },
+  {
+    id: 'admin_gerente',
+    name: 'Gerência Financeira & Operações',
+    email: 'gerencia@retoma.com.br',
+    password: 'gerente2026',
+    permissionLevel: 'gerente',
+    status: 'ativo',
+    createdAt: '2026-02-15',
+    permissions: {
+      canEditAppInfo: false,
+      canEditPricing: false,
+      canEditStock: true,
+      canViewCommissions: true,
+      canPayCommissions: true,
+      canManageAdmins: false,
+      canManageProducts: true,
+    },
+  },
+  {
+    id: 'admin_operador',
+    name: 'Operador de Expedição & Estoque',
+    email: 'estoque@retoma.com.br',
+    password: 'operador2026',
+    permissionLevel: 'operador',
+    status: 'ativo',
+    createdAt: '2026-03-01',
+    permissions: {
+      canEditAppInfo: false,
+      canEditPricing: false,
+      canEditStock: true,
+      canViewCommissions: false,
+      canPayCommissions: false,
+      canManageAdmins: false,
+      canManageProducts: false,
+    },
+  },
+];
 
 export const INITIAL_BROKERS: Broker[] = [
   {
@@ -86,15 +168,19 @@ export const INITIAL_BROKERS: Broker[] = [
 export const INITIAL_PLANS: Plan[] = [
   {
     id: 'plan_essencial',
-    name: 'Plano Start Local',
-    badge: 'Início Rápido',
-    description: 'Ideal para pequenos comércios e prestadores que desejam começar a ranquear no Google e coletar avaliações 5 estrelas.',
-    monthlyPrice: 149.0,
-    annualPrice: 1428.0, // 119/mês
-    annualMonthlyEquivalent: 119.0,
-    discountPercentage: 20,
+    name: 'Plano Start Local (12x R$ 20,00)',
+    badge: '12x R$ 20,00 / Mês',
+    popular: true,
+    description: '12 mensalidades de R$ 20,00 | Anual R$ 240,00 reais. Inclui 1 Display de Balcão NFC em Acrílico pronto para pronta-entrega imediata.',
+    monthlyPrice: 20.0,
+    annualPrice: 240.0, // 12x de 20 = 240
+    annualMonthlyEquivalent: 20.0,
+    discountPercentage: 0,
+    nfcCardCount: 1,
+    nfcImageUrl: '/assets/aistudio/download_29048104.webp',
     features: [
-      { text: '1 Cartão NFC Google Avaliação Físico em Acrílico Resistente', included: true },
+      { text: '1 Cartão / Display NFC Google Avaliação em Acrílico Resistente', included: true, highlight: true },
+      { text: 'Pronta-entrega imediata com entrega rápida em Rio Branco - AC', included: true, highlight: true },
       { text: 'Implantação e Padronização do Google Empresa', included: true },
       { text: 'Configuração e Pin no Google Mapas', included: true },
       { text: 'QR Code Dinâmico de Backup no Cartão', included: true },
@@ -108,15 +194,17 @@ export const INITIAL_PLANS: Plan[] = [
   {
     id: 'plan_pro',
     name: 'Plano Pro Aceleração',
-    popular: true,
-    badge: 'Mais Vendido',
-    description: 'A solução definitiva para estabelecimentos que desejam dominar as buscas locais no Google e manter presença forte no Instagram.',
-    monthlyPrice: 289.0,
-    annualPrice: 2748.0, // 229/mês
-    annualMonthlyEquivalent: 229.0,
-    discountPercentage: 21,
+    badge: 'Mais Completo',
+    description: 'A solução definitiva para estabelecimentos que desejam dominar as buscas locais no Google com 2 Displays NFC inclusos.',
+    monthlyPrice: 40.0,
+    annualPrice: 480.0, // 12x de 40 = 480
+    annualMonthlyEquivalent: 40.0,
+    discountPercentage: 0,
+    nfcCardCount: 2,
+    nfcImageUrl: '/assets/aistudio/download_29048104.webp',
     features: [
-      { text: '2 Cartões NFC Google Avaliação (Balcão + Atendimento)', included: true, highlight: true },
+      { text: '2 Cartões / Displays NFC Google Avaliação (Balcão + Atendimento)', included: true, highlight: true },
+      { text: 'Pronta-entrega imediata em Rio Branco - AC', included: true, highlight: true },
       { text: 'Implantação Completa Google Empresa + Otimização de SEO Local', included: true },
       { text: 'Implantação no Google Mapas com Rotas e Fotos 360', included: true },
       { text: 'Criação / Reformulação de Instagram Comercial', included: true, highlight: true },
@@ -131,13 +219,16 @@ export const INITIAL_PLANS: Plan[] = [
     id: 'plan_elite',
     name: 'Plano Elite Retoma',
     badge: 'Crescimento Máximo',
-    description: 'Estrutura comercial completa de alto nível com múltiplos cartões NFC, gestão de presença digital e design publicitário contínuo.',
-    monthlyPrice: 499.0,
-    annualPrice: 4788.0, // 399/mês
-    annualMonthlyEquivalent: 399.0,
-    discountPercentage: 20,
+    description: 'Estrutura comercial completa de alto nível com 4 cartões NFC, gestão de presença digital e design publicitário contínuo.',
+    monthlyPrice: 80.0,
+    annualPrice: 960.0, // 12x de 80 = 960
+    annualMonthlyEquivalent: 80.0,
+    discountPercentage: 0,
+    nfcCardCount: 4,
+    nfcImageUrl: '/assets/aistudio/download_29048104.webp',
     features: [
-      { text: '4 Cartões NFC Google Avaliação Personalizados com Logo', included: true, highlight: true },
+      { text: '4 Cartões / Displays NFC Google Avaliação Personalizados com Logo', included: true, highlight: true },
+      { text: 'Pronta-entrega imediata em Rio Branco - AC', included: true, highlight: true },
       { text: 'Implantação Avançada Google Empresa + Catálogo de Produtos', included: true },
       { text: 'Google Mapas com Georreferenciamento e Pins de Busca', included: true },
       { text: 'Instagram Profissional com Bio Estratégica e Destaques', included: true },
@@ -150,6 +241,7 @@ export const INITIAL_PLANS: Plan[] = [
   },
 ];
 
+
 export const INITIAL_PRODUCTS: ProductItem[] = [
   {
     id: 'prod_nfc_card',
@@ -160,6 +252,7 @@ export const INITIAL_PRODUCTS: ProductItem[] = [
     price: 97.0,
     badge: 'Hardware Exclusivo',
     iconName: 'CreditCard',
+    imageUrl: '/assets/aistudio/download_29048104.webp',
     features: [
       'Chip NFC NTAG213 de resposta instantânea sem app',
       'QR Code laser durável para celulares sem NFC',

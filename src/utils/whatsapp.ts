@@ -20,7 +20,11 @@ export function formatDateTimeBR(dateString: string): string {
 /**
  * Monta o link do WhatsApp para o número oficial (68 99282-7744) com o contrato completo.
  */
-export function getWhatsAppContractUrl(contract: ContractItem, targetPhone = RETOMA_WHATSAPP_OFFICIAL): string {
+export function getWhatsAppContractUrl(
+  contract: ContractItem, 
+  targetPhone = RETOMA_WHATSAPP_OFFICIAL,
+  includeCommission = false
+): string {
   const cleanPhone = targetPhone.replace(/\D/g, '');
   const cycleText = contract.billingCycle === 'annual' ? 'Anual (12 Meses)' : 'Mensal Recorrente';
   const paymentMethodLabel = {
@@ -35,9 +39,12 @@ export function getWhatsAppContractUrl(contract: ContractItem, targetPhone = RET
     .join('\n');
 
   const brokerSection = contract.brokerName
-    ? `\n🤝 *CORRETOR RESPONSÁVEL:*
-• *Nome:* ${contract.brokerName}
-• *Comissão (50%):* ${formatCurrencyBRL(contract.commissionValue || contract.totalValue * 0.5)} (${contract.commissionStatus === 'paid' ? 'Paga via Pix' : 'Aguardando Pagamento'})`
+    ? `\n🤝 *CONSULTOR COMERCIAL CREDENCIADO:*
+• *Nome:* ${contract.brokerName}${
+      includeCommission
+        ? `\n• *Comissão:* ${formatCurrencyBRL(contract.commissionValue || contract.totalValue * 0.5)} (${contract.commissionStatus === 'paid' ? 'Paga via Pix' : 'Aguardando Pagamento'})`
+        : ''
+    }`
     : '';
 
   const text = `📋 *NOVO CONTRATO EFETUADO - ${RETOMA_COMPANY_NAME}*

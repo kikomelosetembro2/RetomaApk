@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { AuthUser, Broker, ContractItem } from '../types';
 import { formatCurrencyBRL, formatDateTimeBR, getWhatsAppCommissionNoticeUrl, getWhatsAppContractUrl } from '../utils/whatsapp';
 import { generateCommissionVoucherPDF, generateContractPDF } from '../utils/pdfGenerator';
-import { RETOMA_PHONE_DISPLAY, RETOMA_WHATSAPP_OFFICIAL } from '../data/initialData';
+import { RETOMA_PHONE_DISPLAY, RETOMA_WHATSAPP_OFFICIAL, APP_APK_VERSION } from '../data/initialData';
 import { 
   ShieldCheck, 
   CheckCircle, 
@@ -331,9 +331,13 @@ export const BrokerPortalView: React.FC<BrokerPortalViewProps> = ({
           )}
         </div>
 
-        {/* Rodapé de Comprovantes e Direitos Autorais */}
+        {/* Rodapé de Comprovantes, Versão do APK e Direitos Autorais */}
         <div className="pt-3 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-400">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 font-bold text-[11px]">
+              Versão do APK: {APP_APK_VERSION}
+            </span>
+            <span>•</span>
             <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
             <span>Desenvolvedores do Projeto & Direitos Autorais:</span>
             <strong className="text-white">Bernardo Araújo e Francisco Araújo</strong>

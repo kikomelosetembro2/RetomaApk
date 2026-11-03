@@ -514,6 +514,33 @@ export const ContractTab: React.FC<ContractTabProps> = ({
             </div>
           </div>
 
+          {/* Hardware Físico Incluso Highlight Banner */}
+          <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-950/50 via-slate-950 to-indigo-950/40 border border-blue-500/30 flex flex-col sm:flex-row items-center gap-4">
+            <div className="w-20 h-16 sm:w-24 sm:h-20 shrink-0 rounded-xl overflow-hidden border border-blue-400/40 shadow bg-slate-950">
+              <img
+                src="/assets/aistudio/download_29048104.webp"
+                alt="Display de Balcão NFC Google Avaliação"
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <div className="flex-1 text-center sm:text-left">
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-blue-300 bg-blue-500/20 px-2 py-0.5 rounded-full border border-blue-500/30">
+                  Hardware Físico Incluso
+                </span>
+                <span className="text-[10px] font-semibold text-emerald-400">
+                  Pronta-entrega em Rio Branco e região
+                </span>
+              </div>
+              <h4 className="text-sm font-bold text-white">
+                Display de Balcão NFC Google Avaliação (Acrílico Branco ou Preto)
+              </h4>
+              <p className="text-xs text-slate-300 mt-0.5">
+                Todas as propostas incluem totens em acrílico resistente com chip NFC de aproximação e QR Code laser. O cliente encosta o celular e avalia em 5 segundos no Google.
+              </p>
+            </div>
+          </div>
+
           {/* Billing Cycle Picker */}
           <div className="flex flex-wrap items-center gap-4 bg-slate-950/70 p-4 rounded-2xl border border-slate-800">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-300">
@@ -553,39 +580,67 @@ export const ContractTab: React.FC<ContractTabProps> = ({
             {INITIAL_PLANS.map((plan) => {
               const isSelected = selectedPlanId === plan.id;
               const price = billingCycle === 'annual' ? plan.annualPrice : plan.monthlyPrice;
+              const nfcQty = plan.nfcCardCount || (plan.id === 'plan_elite' ? 4 : plan.id === 'plan_pro' ? 2 : 1);
+              const nfcImage = plan.nfcImageUrl || '/assets/aistudio/download_29048104.webp';
 
               return (
                 <div
                   key={plan.id}
                   onClick={() => setSelectedPlanId(plan.id)}
-                  className={`p-5 rounded-2xl border cursor-pointer transition-all ${
+                  className={`p-5 rounded-2xl border cursor-pointer transition-all flex flex-col justify-between ${
                     isSelected
-                      ? 'bg-blue-950/50 border-blue-500 ring-2 ring-blue-500/20'
+                      ? 'bg-blue-950/50 border-blue-500 ring-2 ring-blue-500/20 shadow-xl'
                       : 'bg-slate-950/40 border-slate-800 hover:border-slate-700'
                   }`}
                 >
-                  <div className="flex justify-between items-start mb-2">
-                    <span className="text-xs font-bold text-blue-400 uppercase">
-                      {plan.badge}
-                    </span>
-                    <input
-                      type="radio"
-                      name="plan"
-                      checked={isSelected}
-                      onChange={() => setSelectedPlanId(plan.id)}
-                      className="accent-blue-500 w-4 h-4 cursor-pointer"
-                    />
+                  <div>
+                    <div className="flex justify-between items-start mb-2">
+                      <span className="text-xs font-bold text-blue-400 uppercase">
+                        {plan.badge}
+                      </span>
+                      <input
+                        type="radio"
+                        name="plan"
+                        checked={isSelected}
+                        onChange={() => setSelectedPlanId(plan.id)}
+                        className="accent-blue-500 w-4 h-4 cursor-pointer"
+                      />
+                    </div>
+                    <h4 className="font-bold text-white text-base">{plan.name}</h4>
+                    <div className="mt-2 text-xl font-black text-white">
+                      {formatCurrencyBRL(price)}
+                      <span className="text-xs text-slate-400 font-normal">
+                        {billingCycle === 'annual' ? ' / ano' : ' / mês'}
+                      </span>
+                    </div>
+
+                    {/* NFC Display Picture & Badge in Proposal Card */}
+                    <div className="mt-3 relative rounded-xl overflow-hidden border border-slate-800 bg-slate-950">
+                      <img
+                        src={nfcImage}
+                        alt={`Display NFC incluso no ${plan.name}`}
+                        className="w-full h-24 object-cover"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-transparent to-transparent pointer-events-none" />
+                      <div className="absolute bottom-1.5 left-2 right-2 flex items-center justify-between">
+                        <span className="text-[10px] font-black text-white bg-blue-600/90 px-2 py-0.5 rounded shadow">
+                          {nfcQty} {nfcQty > 1 ? 'Displays Inclusos' : 'Display Incluso'}
+                        </span>
+                        <span className="text-[9px] font-semibold text-amber-300 bg-slate-900/80 px-1.5 py-0.5 rounded">
+                          NFC + QR Code
+                        </span>
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-slate-400 mt-2 line-clamp-2">
+                      {plan.description}
+                    </p>
                   </div>
-                  <h4 className="font-bold text-white text-base">{plan.name}</h4>
-                  <div className="mt-3 text-xl font-black text-white">
-                    {formatCurrencyBRL(price)}
-                    <span className="text-xs text-slate-400 font-normal">
-                      {billingCycle === 'annual' ? ' / ano' : ' / mês'}
-                    </span>
+
+                  <div className="mt-3 pt-2 border-t border-slate-800/80 text-[11px] text-emerald-400 font-semibold flex items-center gap-1">
+                    <CheckCircle className="w-3 h-3 shrink-0" />
+                    <span>Inclui entrega e configuração imediata</span>
                   </div>
-                  <p className="text-xs text-slate-400 mt-2 line-clamp-2">
-                    {plan.description}
-                  </p>
                 </div>
               );
             })}
@@ -604,9 +659,18 @@ export const ContractTab: React.FC<ContractTabProps> = ({
                     key={prod.id}
                     className="p-3.5 bg-slate-950/50 border border-slate-800 rounded-xl flex items-center justify-between gap-3"
                   >
-                    <div>
-                      <div className="text-xs font-bold text-white">{prod.title}</div>
-                      <div className="text-xs text-emerald-400 font-semibold">{formatCurrencyBRL(prod.price)}</div>
+                    <div className="flex items-center gap-3">
+                      {prod.imageUrl && (
+                        <img
+                          src={prod.imageUrl}
+                          alt={prod.title}
+                          className="w-10 h-10 rounded-lg object-cover border border-slate-700/80 shrink-0"
+                        />
+                      )}
+                      <div>
+                        <div className="text-xs font-bold text-white">{prod.title}</div>
+                        <div className="text-xs text-emerald-400 font-semibold">{formatCurrencyBRL(prod.price)}</div>
+                      </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <button
@@ -718,6 +782,16 @@ export const ContractTab: React.FC<ContractTabProps> = ({
               <p className="text-xs text-slate-400 mt-1">
                 {currentPlan?.name} ({billingCycle === 'annual' ? 'Anual' : 'Mensal'}) + Itens adicionais
               </p>
+              <div className="flex items-center gap-2 mt-2 pt-2 border-t border-slate-800/80">
+                <img
+                  src="/assets/aistudio/download_29048104.webp"
+                  alt="Display NFC"
+                  className="w-7 h-7 rounded-md object-cover border border-blue-400/40 shrink-0"
+                />
+                <span className="text-xs text-blue-300 font-semibold">
+                  {currentPlan?.nfcCardCount || (currentPlan?.id === 'plan_elite' ? 4 : currentPlan?.id === 'plan_pro' ? 2 : 1)}x Display(s) de Balcão NFC incluso(s) (Acrílico Branco/Preto)
+                </span>
+              </div>
             </div>
 
             <div className="text-right text-xs text-slate-400 space-y-1">
@@ -728,24 +802,23 @@ export const ContractTab: React.FC<ContractTabProps> = ({
           </div>
         </div>
 
-        {/* Section 4: Corretor Responsável & Comissão (50%) */}
+        {/* Section 4: Consultor Comercial Credenciado */}
         <div className="bg-slate-900/60 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6">
           <div className="flex items-center gap-3 border-b border-slate-800/80 pb-4">
             <div className="p-2 rounded-xl bg-purple-600/10 text-purple-400">
               <Users className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-white">4. Corretor Responsável pelo Fechamento (Comissão de 50%)</h3>
+              <h3 className="text-lg font-bold text-white">4. Consultor Comercial Credenciado</h3>
               <p className="text-xs text-slate-400">
-                Selecione o corretor que realizou a venda para emissão automática de 50% de comissão via Pix.
+                Selecione o consultor credenciado que realizou o atendimento à sua empresa para acompanhamento do pedido.
               </p>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {brokers.map((broker) => {
               const isSelected = selectedBrokerId === broker.id;
-              const comm = totalContractValue * 0.50;
 
               return (
                 <div
@@ -759,7 +832,7 @@ export const ContractTab: React.FC<ContractTabProps> = ({
                 >
                   <div className="flex justify-between items-start">
                     <span className="text-[10px] font-bold text-purple-300 bg-purple-500/10 px-2 py-0.5 rounded-full uppercase">
-                      50% Comissão
+                      Consultor Oficial
                     </span>
                     <input
                       type="radio"
@@ -770,23 +843,21 @@ export const ContractTab: React.FC<ContractTabProps> = ({
                     />
                   </div>
                   <h4 className="font-bold text-white text-base mt-2">{broker.name}</h4>
-                  <div className="text-xs text-slate-400 mt-1">Pix: {broker.pixKey}</div>
-                  <div className="mt-3 pt-2 border-t border-slate-800 flex justify-between items-center text-xs">
-                    <span className="text-slate-400">Valor Comissão:</span>
-                    <span className="font-black text-emerald-400">{formatCurrencyBRL(comm)}</span>
+                  <div className="text-xs text-slate-400 mt-1">Contato: {broker.phone}</div>
+                  <div className="mt-3 pt-2 border-t border-slate-800 flex items-center justify-between text-xs">
+                    <span className="text-emerald-400 font-semibold">Credenciado Ativo</span>
+                    <span className="text-[10px] text-slate-500">Rio Branco - AC</span>
                   </div>
                 </div>
               );
             })}
           </div>
 
-          <div className="p-4 bg-purple-950/30 border border-purple-500/30 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-            <div className="flex items-center gap-2 text-purple-200">
-              <DollarSign className="w-4 h-4 text-emerald-400 shrink-0" />
-              <span>
-                Comissão de 50% (<strong>{formatCurrencyBRL(totalContractValue * 0.50)}</strong>) será vinculada ao corretor selecionado com recibo em PDF e notificação WhatsApp.
-              </span>
-            </div>
+          <div className="p-3.5 bg-slate-950/50 border border-slate-800/80 rounded-2xl flex items-center gap-2 text-xs text-slate-400">
+            <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+            <span>
+              O consultor selecionado será responsável pelo acompanhamento da implantação do Google Empresa e entrega dos displays NFC.
+            </span>
           </div>
         </div>
 
@@ -847,30 +918,48 @@ export const ContractTab: React.FC<ContractTabProps> = ({
         </div>
 
         {/* Submit Actions Button */}
-        <div className="pt-2 flex flex-col sm:flex-row items-center gap-4">
-          <button
-            type="submit"
-            disabled={isGenerating}
-            className="w-full sm:w-auto flex-1 bg-gradient-to-r from-blue-600 via-indigo-600 to-emerald-600 hover:from-blue-500 hover:to-emerald-500 text-white py-4 px-8 rounded-2xl font-black text-sm uppercase tracking-wider shadow-2xl shadow-blue-600/20 transition-all flex items-center justify-center gap-3 cursor-pointer disabled:opacity-50"
-          >
-            <Download className="w-5 h-5" />
-            <span>
-              {isGenerating ? 'Emitindo Contrato & PDF...' : 'Emitir Contrato Oficial em PDF & Salvar'}
-            </span>
-          </button>
+        <div className="pt-2 space-y-3">
+          <div className="p-3.5 bg-emerald-950/40 border border-emerald-500/30 rounded-2xl flex items-center justify-between gap-3 text-xs text-emerald-300">
+            <div className="flex items-center gap-2">
+              <span className="p-1 rounded-lg bg-emerald-500/20 text-emerald-400 font-bold">2x</span>
+              <span>
+                <strong>Envio Automático Duplo:</strong> Uma cópia deste contrato em PDF será enviada para o <strong>WhatsApp da Central Retoma ((68) 99282-7744)</strong> e para o <strong>WhatsApp do Cliente ({client.whatsapp || 'WhatsApp Informado'})</strong>.
+              </span>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-center gap-4">
+            <button
+              type="submit"
+              disabled={isGenerating}
+              className="w-full sm:w-auto flex-1 bg-gradient-to-r from-emerald-600 via-teal-600 to-blue-600 hover:from-emerald-500 hover:to-blue-500 text-white py-4 px-8 rounded-2xl font-black text-sm uppercase tracking-wider shadow-2xl shadow-emerald-600/20 transition-all flex items-center justify-center gap-3 cursor-pointer disabled:opacity-50"
+            >
+              <Download className="w-5 h-5" />
+              <span>
+                {isGenerating ? 'Emitindo Contrato & PDF...' : 'Emitir Contrato Oficial em PDF & Enviar aos 2 WhatsApps'}
+              </span>
+            </button>
+          </div>
         </div>
 
-        {/* Rodapé do Contrato: Desenvolvedores e Direitos Autorais */}
-        <div className="p-4 bg-slate-950/60 border border-slate-800 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400">
-          <div className="flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
-            <span>Desenvolvedores do Projeto & Direitos Autorais:</span>
-            <strong className="text-white">Bernardo Araújo e Francisco Araújo</strong>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-slate-400">Rio Branco - Acre</span>
+        {/* Rodapé do Contrato: Versão do APK, Desenvolvedores e Direitos Autorais */}
+        <div className="p-4 bg-slate-950/70 border border-slate-800 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400 shadow-inner">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 font-bold text-[11px]">
+              Versão do APK: Versão 10/2026-11
+            </span>
             <span>•</span>
-            <span className="text-purple-400 font-semibold">Nov/2026</span>
+            <span className="text-slate-300 font-medium">Desenvolvedores do Projeto & Direitos Autorais:</span>
+            <strong className="text-white font-bold">Bernardo Araújo e Francisco Araújo</strong>
+          </div>
+          <div className="flex items-center gap-2 font-semibold">
+            <span className="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 text-[11px]">
+              Rio Branco - Acre
+            </span>
+            <span>•</span>
+            <span className="px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20 text-[11px]">
+              Nov/2026
+            </span>
           </div>
         </div>
       </form>

@@ -50,15 +50,15 @@ export const Navbar: React.FC<NavbarProps> = ({
   isInstalled,
 }) => {
   const tabs = [
-    { id: 'plans' as NavTab, label: 'Planos Mensal / Anual', icon: Sparkles, badge: 'Economize 20%' },
+    { id: 'plans' as NavTab, label: 'Planos Mensal / Anual', icon: Sparkles, badge: '12x R$ 20' },
     { id: 'contract' as NavTab, label: 'Gerador de Contrato', icon: FileText, badge: 'PDF & Whats' },
     { id: 'products' as NavTab, label: 'Produtos & Serviços', icon: ShoppingBag },
-    { id: 'admin-products' as NavTab, label: 'Admin Produtos', icon: Boxes, badge: 'CRUD' },
+    { id: 'admin-products' as NavTab, label: 'Painel Administrativo', icon: Lock, badge: 'Restrito' },
     { id: 'schedule' as NavTab, label: 'Agendamento de Visitas', icon: Calendar, count: pendingVisitsCount },
     { id: 'financial' as NavTab, label: 'Dashboard Financeiro', icon: BarChart3, count: activeContractsCount },
     { 
       id: 'brokers' as NavTab, 
-      label: currentUser?.role === 'broker' ? 'Meu Portal (50%)' : 'Área do Corretor (50%)', 
+      label: currentUser?.role === 'broker' ? 'Meu Portal Corretor' : 'Portal do Corretor', 
       icon: Users, 
       badge: currentUser ? 'Logado' : 'Acesso Restrito' 
     },

@@ -11,8 +11,9 @@ import { AuthModal } from './components/AuthModal';
 import { Card3DViewer } from './components/Card3DViewer';
 import { ContractSuccessModal } from './components/ContractSuccessModal';
 import { AdminProductPanel } from './components/AdminProductPanel';
+import { AdminPanel } from './components/AdminPanel';
 import { PromoVideoModal } from './components/PromoVideoModal';
-import { Plan, BillingCycle, ContractItem, VisitSchedule, ProductItem, Broker, AuthUser } from './types';
+import { Plan, BillingCycle, ContractItem, VisitSchedule, ProductItem, Broker, AuthUser, AppSettings } from './types';
 import { 
   INITIAL_CONTRACTS, 
   INITIAL_PLANS, 
@@ -20,7 +21,9 @@ import {
   INITIAL_BROKERS,
   RETOMA_PHONE_DISPLAY, 
   RETOMA_WHATSAPP_OFFICIAL,
-  PROJECT_COPYRIGHT_TEXT 
+  PROJECT_COPYRIGHT_TEXT,
+  APP_APK_VERSION,
+  INITIAL_NFC_READY_STOCK
 } from './data/initialData';
 import { MessageCircle, ShieldCheck, Sparkles, MapPin, Phone, Lock, UserPlus, LogIn, CheckCircle, Smartphone, Download } from 'lucide-react';
 import retomaLogo from './assets/logo.png';
@@ -32,10 +35,42 @@ export default function App() {
   const [currentTab, setCurrentTab] = useState<NavTab>('plans');
   const [contracts, setContracts] = useState<ContractItem[]>(INITIAL_CONTRACTS);
   const [brokers, setBrokers] = useState<Broker[]>(INITIAL_BROKERS);
-  const [selectedPlanForContract, setSelectedPlanForContract] = useState<Plan | null>(INITIAL_PLANS[1]);
+  const [selectedPlanForContract, setSelectedPlanForContract] = useState<Plan | null>(INITIAL_PLANS[0]);
   const [selectedCycleForContract, setSelectedCycleForContract] = useState<BillingCycle>('annual');
   const [successModalContract, setSuccessModalContract] = useState<ContractItem | null>(null);
   const [showPromoVideoModal, setShowPromoVideoModal] = useState<boolean>(false);
+
+  // Estoque de cartões prontos para pronta entrega (inicial 20 unidades) com persistência
+  const [availableNfcStock, setAvailableNfcStock] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('retoma_nfc_available_stock');
+      if (saved !== null) {
+        const parsed = Number(saved);
+        if (!isNaN(parsed)) return parsed;
+      }
+    } catch {
+      // Ignored
+    }
+    return INITIAL_NFC_READY_STOCK; // 20 unidades prontas
+  });
+
+  // Configurações do Aplicativo com persistência
+  const [appSettings, setAppSettings] = useState<AppSettings>(() => {
+    try {
+      const saved = localStorage.getItem('retoma_app_settings');
+      if (saved) return JSON.parse(saved);
+    } catch {
+      // Ignored
+    }
+    return {
+      readyDeliveryNfcStock: INITIAL_NFC_READY_STOCK,
+      planMonthlyPrice: 20.0,
+      planAnnualPrice: 240.0,
+      apkVersion: APP_APK_VERSION,
+      supportPhone: RETOMA_PHONE_DISPLAY,
+      supportWhatsapp: RETOMA_WHATSAPP_OFFICIAL,
+    };
+  });
 
   // Authenticated User State (default logged as Francisco Araújo to demonstrate the verified experience)
   const [currentUser, setCurrentUser] = useState<AuthUser | null>({
@@ -74,6 +109,24 @@ export default function App() {
     );
   };
 
+  const handleUpdateAvailableStock = (newStock: number) => {
+    setAvailableNfcStock(newStock);
+    try {
+      localStorage.setItem('retoma_nfc_available_stock', String(newStock));
+    } catch {
+      // Ignored
+    }
+  };
+
+  const handleUpdateAppSettings = (newSettings: AppSettings) => {
+    setAppSettings(newSettings);
+    try {
+      localStorage.setItem('retoma_app_settings', JSON.stringify(newSettings));
+    } catch {
+      // Ignored
+    }
+  };
+
   // Switch to Contract from Plans
   const handleSelectPlanForContract = (plan: Plan, cycle: BillingCycle) => {
     setSelectedPlanForContract(plan);
@@ -91,15 +144,33 @@ export default function App() {
 
   // Switch to Contract from Schedule Visit
   const handleConvertVisitToContract = (visit: VisitSchedule) => {
-    setSelectedPlanForContract(INITIAL_PLANS[1]);
+    setSelectedPlanForContract(INITIAL_PLANS[0]);
     setSelectedCycleForContract('annual');
     setCurrentTab('contract');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Add new contract
+  // Add new contract & deduct from 20 available NFC ready delivery stock
   const handleContractCreated = (newContract: ContractItem) => {
     setContracts([newContract, ...contracts]);
+
+    // Descontar os cartões do plano e adicionais do estoque pronta entrega
+    const currentPlan = INITIAL_PLANS.find((p) => p.id === newContract.planId);
+    const planCards = currentPlan?.nfcCardCount || 1;
+    const extraCards = newContract.selectedProducts
+      .filter((p) => p.productId === 'prod_nfc_card')
+      .reduce((sum, p) => sum + p.quantity, 0);
+    const totalCardsSold = planCards + extraCards;
+
+    setAvailableNfcStock((prev) => {
+      const updated = Math.max(0, prev - totalCardsSold);
+      try {
+        localStorage.setItem('retoma_nfc_available_stock', String(updated));
+      } catch {
+        // Ignored
+      }
+      return updated;
+    });
   };
 
   return (
@@ -159,6 +230,7 @@ export default function App() {
             onOpen3DCard={() => setCurrentTab('card3d')}
             onOpenInstallModal={() => setIsInstallModalOpen(true)}
             onOpenPromoVideo={() => setShowPromoVideoModal(true)}
+            availableNfcStock={availableNfcStock}
           />
         )}
 
@@ -181,7 +253,15 @@ export default function App() {
         )}
 
         {currentTab === 'admin-products' && (
-          <AdminProductPanel />
+          <AdminPanel
+            contracts={contracts}
+            brokers={brokers}
+            availableNfcStock={availableNfcStock}
+            onUpdateAvailableNfcStock={handleUpdateAvailableStock}
+            onPayCommission={handlePayCommission}
+            appSettings={appSettings}
+            onUpdateAppSettings={handleUpdateAppSettings}
+          />
         )}
 
         {currentTab === 'schedule' && (
@@ -372,10 +452,13 @@ export default function App() {
             </div>
           </div>
 
-          {/* Rodapé Obrigatório de Direitos Autorais e Desenvolvedores */}
+          {/* Rodapé Obrigatório: Versão do APK, Direitos Autorais e Desenvolvedores */}
           <div className="border-t border-slate-800/80 pt-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-slate-400 text-xs bg-slate-950/70 rounded-2xl px-5 py-3.5 border border-slate-800/60 shadow-inner">
             <div className="flex flex-wrap items-center gap-2 text-center sm:text-left">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span className="px-2.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 font-bold text-[11px]">
+                Versão do APK: {appSettings.apkVersion}
+              </span>
+              <span>•</span>
               <span className="text-slate-300 font-medium">
                 Desenvolvedores do Projeto & Direitos Autorais:
               </span>

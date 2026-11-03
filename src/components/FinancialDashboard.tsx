@@ -1078,23 +1078,22 @@ export const FinancialDashboard: React.FC<FinancialDashboardProps> = ({
                           </button>
                         )}
 
-                        {/* Enviar WhatsApp Oficial 68 99282-7744 */}
-                        <a
-                          href={whatsOfficialUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="p-1.5 rounded-lg bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white transition-colors cursor-pointer"
-                          title="Enviar Contrato para WhatsApp Oficial (68) 99282-7744"
+                        {/* Enviar Cópia do Contrato em PDF para os 2 WhatsApps (Central + Cliente) */}
+                        <button
+                          onClick={() => onOpenContractModal(c)}
+                          className="px-2 py-1 rounded-lg bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white transition-colors cursor-pointer flex items-center gap-1 font-bold text-[10px]"
+                          title="Enviar Cópia do Contrato (PDF) para os 2 Números do WhatsApp (Central Oficial e Cliente)"
                         >
-                          <MessageCircle className="w-4 h-4" />
-                        </a>
+                          <MessageCircle className="w-3.5 h-3.5" />
+                          <span>2x Whats</span>
+                        </button>
 
-                        {/* Visualizar Detalhes */}
+                        {/* Visualizar Detalhes & Envio */}
                         <button
                           onClick={() => onOpenContractModal(c)}
                           className="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold text-[11px] transition-colors cursor-pointer"
                         >
-                          Detalhes
+                          Ver & Enviar
                         </button>
                       </div>
                     </td>

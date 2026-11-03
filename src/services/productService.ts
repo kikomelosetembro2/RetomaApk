@@ -12,7 +12,7 @@ export const INITIAL_ADMIN_PRODUCTS: AdminProduct[] = [
     price: 97.00,
     stock: 85,
     status: 'ativo',
-    imageUrl: 'https://images.unsplash.com/photo-1556742049-0a67c5574f73?auto=format&fit=crop&w=800&q=80',
+    imageUrl: '/assets/aistudio/download_29048104.webp',
     createdAt: '2026-10-15T08:30:00.000Z',
     updatedAt: '2026-10-20T14:00:00.000Z',
   },

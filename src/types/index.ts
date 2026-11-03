@@ -18,6 +18,8 @@ export interface Plan {
   discountPercentage: number;
   features: PlanFeature[];
   includedProducts: string[];
+  nfcCardCount?: number;
+  nfcImageUrl?: string;
 }
 
 export interface ProductItem {
@@ -33,6 +35,7 @@ export interface ProductItem {
   features: string[];
   deliveryTime: string;
   idealFor: string;
+  imageUrl?: string;
 }
 
 export type ProductStatus = 'ativo' | 'inativo';
@@ -147,4 +150,34 @@ export interface VisitSchedule {
   status: 'scheduled' | 'in_route' | 'completed' | 'converted_to_contract' | 'cancelled';
   notes: string;
   estimatedContractValue: number;
+}
+
+export type AdminPermissionLevel = 'master' | 'gerente' | 'operador';
+
+export interface AppAdminUser {
+  id: string;
+  name: string;
+  email: string;
+  password: string;
+  permissionLevel: AdminPermissionLevel;
+  status: 'ativo' | 'inativo';
+  createdAt: string;
+  permissions: {
+    canEditAppInfo: boolean;
+    canEditPricing: boolean;
+    canEditStock: boolean;
+    canViewCommissions: boolean;
+    canPayCommissions: boolean;
+    canManageAdmins: boolean;
+    canManageProducts: boolean;
+  };
+}
+
+export interface AppSettings {
+  readyDeliveryNfcStock: number;
+  planMonthlyPrice: number;
+  planAnnualPrice: number;
+  apkVersion: string;
+  supportPhone: string;
+  supportWhatsapp: string;
 }
